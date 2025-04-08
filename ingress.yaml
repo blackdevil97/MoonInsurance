@@ -1,0 +1,80 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mooninsurance-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: mooninsurance.local
+    http:
+      paths:
+      - path: /agent
+        pathType: Prefix
+        backend:
+          service:
+            name: agent-service
+            port:
+              number: 5001
+      - path: /sales
+        pathType: Prefix
+        backend:
+          service:
+            name: integration-service
+            port:
+              number: 5002
+      - path: /notification/check_target
+        pathType: Prefix
+        backend:
+          service:
+            name: notification-service
+            port:
+              number: 5003
+      - path: /aggregation/best_teams
+        pathType: Prefix
+        backend:
+          service:
+            name: aggregator-service
+            port:
+              number: 5004
+      - path: /aggregation/best_products
+        pathType: Prefix
+        backend:
+          service:
+            name: aggregator-service
+            port:
+              number: 5004
+      - path: /aggregation/branch_performance
+        pathType: Prefix
+        backend:
+          service:
+            name: aggregator-service
+            port:
+              number: 5004
+      - path: /sync/appointments_per_doctor
+        pathType: Prefix
+        backend:
+          service:
+            name: redshift-analytics-service
+            port:
+              number: 5005
+      - path: /sync/appointments_over_time
+        pathType: Prefix
+        backend:
+          service:
+            name: redshift-analytics-service
+            port:
+              number: 5005
+      - path: /sync/common_conditions_by_specialty
+        pathType: Prefix
+        backend:
+          service:
+            name: redshift-analytics-service
+            port:
+              number: 5005
+      - path: /sync/average_appointments_per_patient
+        pathType: Prefix
+        backend:
+          service:
+            name: redshift-analytics-service
+            port:
+              number: 5005

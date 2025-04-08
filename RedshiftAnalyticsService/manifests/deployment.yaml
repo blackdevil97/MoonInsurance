@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: redshift-analytics-cronjob
+spec:
+  schedule: "0 4 * * *" # Daily at 4 AM
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: redshift-analytics
+        spec:
+          containers:
+          - name: redshift-analytics
+            image: redshift-analytics-service:latest
+            imagePullPolicy: Never
+            env:
+              - name: REDSHIFT_HOST
+                value: "your-redshift-cluster-endpoint"
+              - name: REDSHIFT_PORT
+                value: "5439"
+              - name: REDSHIFT_USER
+                value: "admin"
+              - name: REDSHIFT_PASSWORD
+                value: "Admin1234"
+              - name: REDSHIFT_DBNAME
+                value: "analyticsdb"
+              - name: MONGO_URI
+                value: "your-mongo-uri"
+          restartPolicy: OnFailure
