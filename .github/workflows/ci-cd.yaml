@@ -115,7 +115,7 @@ jobs:
       - name: Run Tests
         run: |
           echo "Running tests..."
-          python Test.py || echo "Test.py not found, skipping."
+          python test.py || echo "test.py not found, skipping."
           echo "Tests executed successfully."
 
       # Step 11: Commit Changes

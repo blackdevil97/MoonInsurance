@@ -3,3 +3,6 @@
 
 # Env files
 .env
+
+# Ignore Minikube binary downloaded during pipeline
+minikube-linux-amd64
