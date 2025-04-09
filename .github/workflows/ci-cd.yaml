@@ -88,6 +88,14 @@ jobs:
 
           echo "Deployment completed."
 
+      # Step 6.1: Verify CronJobs
+      - name: Verify CronJobs
+        run: |
+          echo "Listing all CronJobs for verification..."
+          kubectl get cronjobs
+          echo "CronJobs listed successfully."
+
+
       # Step 7: Trigger Redshift CronJob
       - name: Trigger Redshift CronJob
         run: |
