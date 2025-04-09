@@ -20,4 +20,9 @@ spec:
             - containerPort: 5002
           env:
             - name: MONGO_URI
-              value: "YOUR_MONGO_URI_PLACEHOLDER"
+              value: "${{ secrets.MONGO_URI }}"
+      restartPolicy: Always
+          # env:
+          #   - name: MONGO_URI
+          #     value: "mongodb+srv://rajithawijesinghe74:ohyeoM75Ko3a70pO@clustermooninsuarance.j7nq4hq.mongodb.net/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"
+              # value: "YOUR_MONGO_URI_PLACEHOLDER"
