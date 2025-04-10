@@ -1,4 +1,6 @@
 import requests
+import psycopg2
+import os
 
 BASE_URL = "http://mooninsurance.local"
 

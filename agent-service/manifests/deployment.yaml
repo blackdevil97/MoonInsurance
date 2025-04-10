@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agent-service
+  template:
+    metadata:
+      labels:
+        app: agent-service
+    spec:
+      containers:
+        - name: agent-service
+          image: agent-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5001
+          env:
+            - name: MONGO_URI
+              value: "mongodb+srv://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance.j7nq4hq.mongodb.net/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"
+              
+              # valueFrom:
+              #   secretKeyRef:
+              #     name: mongo-secret
+              #     key: MONGO_URI
+              # value: mongodb://mongodb-service:27017
+              # value: "mongodb+srv://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance.j7nq4hq.mongodb.net/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"
+              # # value: "${{ secrets.MONGO_URI }}"
+      # restartPolicy: Always

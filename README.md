@@ -70,3 +70,12 @@ python Test.py
 
 ## Maintained by
 Rajitha Wijesinghe
+
+
+# MoonInsurance 🚀
+
+[![CI/CD Pipeline](https://github.com/blackdevil97/MoonInsurance/actions/workflows/ci-cd.yaml/badge.svg)](https://github.com/blackdevil97/MoonInsurance/actions/workflows/ci-cd.yaml)
+
+Your professional local and cloud-native insurance application!
+
+...

@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: integration-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: integration-service
+  template:
+    metadata:
+      labels:
+        app: integration-service
+    spec:
+      containers:
+        - name: integration-service
+          image: integration-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5002
+          env:
+            - name: MONGO_URI
+              # value: mongodb://mongodb-service:27017
+              # value: "${{ secrets.MONGO_URI }}"
+      # restartPolicy: Always
+          # env:
+          #   - name: MONGO_URI
+              value: "mongodb+srv://rajithawijesinghe74:ohyeoM75Ko3a70pO@clustermooninsuarance.j7nq4hq.mongodb.net/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"
+              # value: "YOUR_MONGO_URI_PLACEHOLDER"

@@ -1,0 +1,141 @@
+{
+    "info": {
+      "name": "Moon Insurance API Collection - Local Testing",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+      "_postman_id": "moon-insurance-collection"
+    },
+    "item": [
+      {
+        "name": "Agent Service",
+        "item": [
+          {
+            "name": "Create Agent",
+            "request": {
+              "method": "POST",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT001\",\n  \"agent_name\": \"John Doe\",\n  \"team_name\": \"Alpha Team\",\n  \"branch_name\": \"Colombo\"\n}"
+              },
+              "url": { "raw": "http://localhost:5001/agent", "host": ["localhost:5001"], "path": ["agent"] }
+            }
+          },
+          {
+            "name": "Get Agent",
+            "request": {
+              "method": "GET",
+              "url": { "raw": "http://localhost:5001/agent/AGENT001", "host": ["localhost:5001"], "path": ["agent", "AGENT001"] }
+            }
+          },
+          {
+            "name": "Update Agent",
+            "request": {
+              "method": "PUT",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_name\": \"Jane Doe\",\n  \"branch_name\": \"Galle\"\n}"
+              },
+              "url": { "raw": "http://localhost:5001/agent/AGENT001", "host": ["localhost:5001"], "path": ["agent", "AGENT001"] }
+            }
+          },
+          {
+            "name": "Delete Agent",
+            "request": {
+              "method": "DELETE",
+              "url": { "raw": "http://localhost:5001/agent/AGENT001", "host": ["localhost:5001"], "path": ["agent", "AGENT001"] }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Integration Service (Sales)",
+        "item": [
+          {
+            "name": "Create Sales",
+            "request": {
+              "method": "POST",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT001\",\n  \"product_name\": \"Life Insurance\",\n  \"team_name\": \"Alpha Team\",\n  \"branch_name\": \"Colombo\"\n}"
+              },
+              "url": { "raw": "http://localhost:5002/sales", "host": ["localhost:5002"], "path": ["sales"] }
+            }
+          },
+          {
+            "name": "Get Sales by Agent",
+            "request": {
+              "method": "GET",
+              "url": { "raw": "http://localhost:5002/sales/agent/AGENT001", "host": ["localhost:5002"], "path": ["sales", "agent", "AGENT001"] }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Notification Service",
+        "item": [
+          {
+            "name": "Check Agent Sales Target",
+            "request": {
+              "method": "GET",
+              "url": { "raw": "http://localhost:5003/notification/check_target/AGENT001", "host": ["localhost:5003"], "path": ["notification", "check_target", "AGENT001"] }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Aggregator Service",
+        "item": [
+          {
+            "name": "Best Performing Teams",
+            "request": {
+              "method": "GET",
+              "url": { "raw": "http://localhost:5004/aggregation/best_teams", "host": ["localhost:5004"], "path": ["aggregation", "best_teams"] }
+            }
+          },
+          {
+            "name": "Products Achieving Targets",
+            "request": {
+              "method": "GET",
+              "url": { "raw": "http://localhost:5004/aggregation/best_products", "host": ["localhost:5004"], "path": ["aggregation", "best_products"] }
+            }
+          },
+          {
+            "name": "Branch Performance",
+            "request": {
+              "method": "GET",
+              "url": { "raw": "http://localhost:5004/aggregation/branch_performance", "host": ["localhost:5004"], "path": ["aggregation", "branch_performance"] }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Redshift Analytics Service",
+        "item": [
+          {
+            "name": "Sync Best Teams",
+            "request": {
+              "method": "POST",
+              "url": { "raw": "http://localhost:5005/sync/best_teams", "host": ["localhost:5005"], "path": ["sync", "best_teams"] }
+            }
+          },
+          {
+            "name": "Sync Products Achieving Targets",
+            "request": {
+              "method": "POST",
+              "url": { "raw": "http://localhost:5005/sync/products_achieving_targets", "host": ["localhost:5005"], "path": ["sync", "products_achieving_targets"] }
+            }
+          },
+          {
+            "name": "Sync Branch Wise Performance",
+            "request": {
+              "method": "POST",
+              "url": { "raw": "http://localhost:5005/sync/branch_wise_performance", "host": ["localhost:5005"], "path": ["sync", "branch_wise_performance"] }
+            }
+          }
+        ]
+      }
+    ]
+  }
+  

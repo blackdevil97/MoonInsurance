@@ -6,3 +6,4 @@
 
 # Ignore Minikube binary downloaded during pipeline
 minikube-linux-amd64
+.env

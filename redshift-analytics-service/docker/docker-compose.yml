@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  redshift-analytics:
+    build: .
+    ports:
+      - "5005:5005"
+    environment:
+      - REDSHIFT_HOST=${REDSHIFT_HOST}
+      - REDSHIFT_USER=${REDSHIFT_USER}
+      - REDSHIFT_PASSWORD=${REDSHIFT_PASSWORD}
+      - REDSHIFT_DBNAME=${REDSHIFT_DBNAME}

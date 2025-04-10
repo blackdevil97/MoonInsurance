@@ -35,7 +35,7 @@ spec:
                 port:
                   number: 5003
 
-          # Aggregator Service
+          # Aggregator Service (Insights)
           - path: /aggregation/best_teams
             pathType: Prefix
             backend:
@@ -58,29 +58,22 @@ spec:
                 port:
                   number: 5004
 
-          # Redshift Analytics Service
-          - path: /sync/appointments_per_doctor
+          # Redshift Analytics Service (Sync to Data Warehouse)
+          - path: /sync/best_teams
             pathType: Prefix
             backend:
               service:
                 name: redshift-analytics-service
                 port:
                   number: 5005
-          - path: /sync/appointments_over_time
+          - path: /sync/products_achieving_targets
             pathType: Prefix
             backend:
               service:
                 name: redshift-analytics-service
                 port:
                   number: 5005
-          - path: /sync/common_conditions_by_specialty
-            pathType: Prefix
-            backend:
-              service:
-                name: redshift-analytics-service
-                port:
-                  number: 5005
-          - path: /sync/average_appointments_per_patient
+          - path: /sync/branch_wise_performance
             pathType: Prefix
             backend:
               service:
