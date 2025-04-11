@@ -11,7 +11,8 @@ logging.basicConfig(level=logging.INFO)
 # MongoDB connection
 try:
     # mongo_uri = os.environ.get("MONGO_URI")
-    mongo_uri = "mongodb://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance@j7nq4hq.mongodb.net:27017/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"  # Replace with your MongoDB URI
+    mongo_uri = os.environ.get("MONGO_URI")
+    # mongo_uri = "mongodb://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance@j7nq4hq.mongodb.net:27017/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"  # Replace with your MongoDB URI
     if not mongo_uri:
         raise ValueError("Missing MONGO_URI environment variable.")
     client = MongoClient(mongo_uri)

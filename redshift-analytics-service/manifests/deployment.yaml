@@ -2,6 +2,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: redshift-analytics-cronjob
+  namespace: mooninsurance
 spec:
   schedule: "0 4 * * *" # Daily at 4 AM
   jobTemplate:
@@ -13,7 +14,7 @@ spec:
         spec:
           containers:
           - name: redshift-analytics
-            image: redshift-analytics-service:latest
+            image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-repo/redshift-analytics-service:latest
             imagePullPolicy: Never
             env:
             - name: REDSHIFT_HOST
@@ -28,7 +29,7 @@ spec:
               value: "analyticsdb"
             - name: MONGO_URI
               # value: mongodb://mongodb-service:27017
-              value: "mongodb+srv://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance.j7nq4hq.mongodb.net/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"
+              value: "${MONGO_URI}"
 
             # env:
             # - name: REDSHIFT_HOST

@@ -6,7 +6,8 @@ app = Flask(__name__)
 
 # MongoDB connection from environment variable
 # mongo_uri = os.environ.get("MONGO_URI")
-mongo_uri = "mongodb://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance@j7nq4hq.mongodb.net:27017/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"  # Replace with your MongoDB URI
+# mongo_uri = "mongodb://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance@j7nq4hq.mongodb.net:27017/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"  # Replace with your MongoDB URI
+mongo_uri = os.environ.get("MONGO_URI")
 client = MongoClient(mongo_uri)
 db = client['MoonInsuranceDB']
 agents_collection = db['Agents']

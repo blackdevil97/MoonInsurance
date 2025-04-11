@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: notification-service
+  # namespace: mooninsurance
 spec:
   replicas: 1
   selector:
@@ -14,14 +15,15 @@ spec:
     spec:
       containers:
         - name: notification-service
-          image: notification-service:latest
-          imagePullPolicy: Never
+          image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-repo/notification-service:latest
+          # image: notification-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5003
               protocol: TCP
           env:
             - name: MONGO_URI
-              value: "mongodb+srv://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance.j7nq4hq.mongodb.net/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"
+              value: "${MONGO_URI}"
               # value: mongodb://mongodb-service:27017
               # value: "mongodb+srv://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance.j7nq4hq.mongodb.net/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"
 

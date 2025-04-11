@@ -14,19 +14,48 @@ spec:
     spec:
       containers:
         - name: agent-service
-          image: agent-service:latest
-          imagePullPolicy: Never
+          image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-repo/agent-service:latest
           ports:
             - containerPort: 5001
           env:
             - name: MONGO_URI
-              value: "mongodb+srv://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance.j7nq4hq.mongodb.net/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"
+              value: "${MONGO_URI}"
+
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: agent-service
+#   namespace: mooninsurance
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: agent-service
+#   template:
+#     metadata:
+#       labels:
+#         app: agent-service
+#     spec:
+#       dnsPolicy: "None"
+#       dnsConfig:
+#         nameservers:
+#           - 8.8.8.8
+#           - 8.8.4.4
+#       containers:
+#         - name: agent-service
+#           image: agent-service:latest
+#           imagePullPolicy: IfNotPresent
+#           ports:
+#             - containerPort: 5001
+#           env:
+#             - name: MONGO_URI
+#               value: "mongodb+srv://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance.j7nq4hq.mongodb.net/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"
               
-              # valueFrom:
-              #   secretKeyRef:
-              #     name: mongo-secret
-              #     key: MONGO_URI
-              # value: mongodb://mongodb-service:27017
-              # value: "mongodb+srv://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance.j7nq4hq.mongodb.net/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"
-              # # value: "${{ secrets.MONGO_URI }}"
-      # restartPolicy: Always
+#               # valueFrom:
+#               #   secretKeyRef:
+#               #     name: mongo-secret
+#               #     key: MONGO_URI
+#               # value: mongodb://mongodb-service:27017
+#               # value: "mongodb+srv://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance.j7nq4hq.mongodb.net/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"
+#               # # value: "${{ secrets.MONGO_URI }}"
+#       # restartPolicy: Always

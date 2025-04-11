@@ -14,8 +14,9 @@ spec:
     spec:
       containers:
         - name: aggregator-service
-          image: aggregator-service:latest
-          imagePullPolicy: Never
+          image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-repo/aggregator-service:latest
+          # image: aggregator-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5004
           env:
@@ -25,5 +26,4 @@ spec:
       # restartPolicy: Always
           # env:
           #   - name: MONGO_URI
-              value: "mongodb+srv://rajithawijesinghe74:ohyeoM75Ko3a70pO@clustermooninsuarance.j7nq4hq.mongodb.net/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"
-              # value: "YOUR_MONGO_URI_PLACEHOLDER"
+              value: "${MONGO_URI}"
