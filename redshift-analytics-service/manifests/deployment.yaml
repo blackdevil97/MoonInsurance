@@ -1,126 +1,52 @@
-apiVersion: batch/v1
-kind: CronJob
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: redshift-analytics-cronjob
-  # namespace: mooninsurance
+  name: redshift-analytics-service
 spec:
-  schedule: "0 4 * * *" # Daily at 4 AM
-  jobTemplate:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redshift-analytics-service
+  template:
+    metadata:
+      labels:
+        app: redshift-analytics-service
     spec:
-      template:
-        metadata:
-          labels:
-            app: redshift-analytics
-        spec:
-          containers:
-          - name: redshift-analytics
-            image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-repo/redshift-analytics-service:latest
-            imagePullPolicy: Never
-            env:
+      containers:
+        - name: redshift-analytics-service
+          image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-repo/redshift-analytics-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5005
+          env:
             - name: REDSHIFT_HOST
-              value: "localhost" # Change when Redshift ready
+              valueFrom:
+                secretKeyRef:
+                  name: mooninsurance-secrets
+                  key: redshift-host
             - name: REDSHIFT_PORT
-              value: "5439"
+              valueFrom:
+                secretKeyRef:
+                  name: mooninsurance-secrets
+                  key: redshift-port
             - name: REDSHIFT_USER
-              value: "admin"
+              valueFrom:
+                secretKeyRef:
+                  name: mooninsurance-secrets
+                  key: redshift-user
             - name: REDSHIFT_PASSWORD
-              value: "Admin1234"
+              valueFrom:
+                secretKeyRef:
+                  name: mooninsurance-secrets
+                  key: redshift-password
             - name: REDSHIFT_DBNAME
-              value: "analyticsdb"
+              valueFrom:
+                secretKeyRef:
+                  name: mooninsurance-secrets
+                  key: redshift-dbname
             - name: MONGO_URI
               valueFrom:
                 secretKeyRef:
                   name: mooninsurance-secrets
                   key: mongo-uri
-
-              # value: mongodb://mongodb-service:27017
-              # value: "${MONGO_URI}"
-
-            # env:
-            # - name: REDSHIFT_HOST
-            #   value: "${{ secrets.REDSHIFT_HOST }}"
-            # - name: REDSHIFT_PORT
-            #   value: "${{ secrets.REDSHIFT_PORT }}"
-            # - name: REDSHIFT_USER
-            #   value: "${{ secrets.REDSHIFT_USER }}"
-            # - name: REDSHIFT_PASSWORD
-            #   value: "${{ secrets.REDSHIFT_PASSWORD }}"
-            # - name: REDSHIFT_DBNAME
-            #   value: "${{ secrets.REDSHIFT_DBNAME }}"
-            # - name: MONGO_URI
-            #   value: "${{ secrets.MONGO_URI }}"
-          restartPolicy: OnFailure
-# apiVersion: apps/v1
-# kind: Deployment
-# metadata:
-#   name: redshift-analytics-service
-# spec:
-#   replicas: 1
-#   selector:
-#     matchLabels:
-#       app: redshift-analytics-service
-#   template:
-#     metadata:
-#       labels:
-#         app: redshift-analytics-service
-#     spec:
-#       containers:
-#         - name: redshift-analytics-service
-#           image: redshift-analytics-service:latest
-#           imagePullPolicy: Never
-#           ports:
-#             - containerPort: 5005
-#           env:
-#             - name: REDSHIFT_HOST
-#               value: "${{ secrets.REDSHIFT_HOST }}"
-#             - name: REDSHIFT_PORT
-#               value: "${{ secrets.REDSHIFT_PORT }}"
-#             - name: REDSHIFT_USER
-#               value: "${{ secrets.REDSHIFT_USER }}"
-#             - name: REDSHIFT_PASSWORD
-#               value: "${{ secrets.REDSHIFT_PASSWORD }}"
-#             - name: REDSHIFT_DBNAME
-#               value: "${{ secrets.REDSHIFT_DBNAME }}"
-#             - name: MONGO_URI
-#               value: "${{ secrets.MONGO_URI }}"
-      # restartPolicy: Always
-          # env:
-          #   - name: REDSHIFT_HOST
-          #     value: ""
-          #   - name: REDSHIFT_PORT
-          #     value: ""
-          #   - name: REDSHIFT_USER
-          #     value: ""
-          #   - name: REDSHIFT_PASSWORD
-          #     value: ""
-          #   - name: REDSHIFT_DBNAME
-          #     value: ""
-          #   - name: MONGO_URI
-          #     value: "mongodb+srv://rajithawijesinghe74:ohyeoM75Ko3a70pO@clustermooninsuarance.j7nq4hq.mongodb.net/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"
-
-          # env:
-          #   - name: REDSHIFT_HOST
-          #     value: "your-redshift-cluster-endpoint"
-          #   - name: REDSHIFT_PORT
-          #     value: "5439"
-          #   - name: REDSHIFT_USER
-          #     value: "admin"
-          #   - name: REDSHIFT_PASSWORD
-          #     value: "Admin1234"
-          #   - name: REDSHIFT_DBNAME
-          #     value: "analyticsdb"
-          #   - name: MONGO_URI
-          #     value: "mongodb+srv://rajithawijesinghe74:ohyeoM75Ko3a70pO@clustermooninsuarance.j7nq4hq.mongodb.net/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"
-      # restartPolicy: Always
-# ---
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: redshift-analytics-service
-# spec:
-#   selector:
-#     app: redshift-analytics-service
-#   ports:
-#     - protocol: TCP
-#       port: 5005
-#       targetPort: 5005
+      restartPolicy: Always

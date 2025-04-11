@@ -1,8 +1,3 @@
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   name: mooninsurance-ingress
-#   namespace: mooninsurance
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -15,7 +10,7 @@ spec:
     - host: mooninsurance.local
       http:
         paths:
-          # Agent Service
+          # 🎯 Agent Service
           - path: /agent
             pathType: Prefix
             backend:
@@ -24,7 +19,7 @@ spec:
                 port:
                   number: 5001
 
-          # Integration Service (Sales)
+          # 🎯 Integration Service (Sales)
           - path: /sales
             pathType: Prefix
             backend:
@@ -33,7 +28,7 @@ spec:
                 port:
                   number: 5002
 
-          # Notification Service
+          # 🎯 Notification Service
           - path: /notification/check_target
             pathType: Prefix
             backend:
@@ -42,7 +37,7 @@ spec:
                 port:
                   number: 5003
 
-          # Aggregator Service (Insights)
+          # 🎯 Aggregator Service (Insights)
           - path: /aggregation/best_teams
             pathType: Prefix
             backend:
@@ -65,7 +60,7 @@ spec:
                 port:
                   number: 5004
 
-          # Redshift Analytics Service (Sync to Data Warehouse)
+          # 🎯 Redshift Analytics Service (Sync to Data Warehouse)
           - path: /sync/best_teams
             pathType: Prefix
             backend:
