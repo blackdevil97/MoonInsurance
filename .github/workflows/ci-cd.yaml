@@ -22,36 +22,40 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up Cloud SDK
+      # Step 2: Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # Step 3: Set up Cloud SDK
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-          export_default_credentials: true
 
-      # Step 3: Configure Docker to use gcloud as a credential helper
+      # Step 4: Configure Docker to use gcloud as a credential helper
       - name: Configure Docker for GCR
         run: |
           gcloud auth configure-docker
 
-      # Step 4: Build and push Docker images to GCR
+      # Step 5: Build and push Docker images to GCR
       - name: Build and Push Docker Images
         run: |
           SERVICES=("agent-service" "integration-service" "notification-service" "aggregator-service" "redshift-analytics-service")
           for SERVICE in "${SERVICES[@]}"; do
             echo "Building image for $SERVICE..."
-            docker build -t gcr.io/${PROJECT_ID}/${SERVICE}:latest ./$SERVICE
+            docker build -t gcr.io/${PROJECT_ID}/${SERVICE}:latest -f ./${SERVICE}/docker/Dockerfile ./${SERVICE}
             echo "Pushing image for $SERVICE..."
             docker push gcr.io/${PROJECT_ID}/${SERVICE}:latest
           done
 
-      # Step 5: Get GKE cluster credentials
+      # Step 6: Get GKE cluster credentials
       - name: Get GKE credentials
         run: |
           gcloud container clusters get-credentials $CLUSTER_NAME --zone $CLUSTER_ZONE --project $PROJECT_ID
 
-      # Step 6: Deploy Kubernetes manifests
+      # Step 7: Deploy Kubernetes manifests
       - name: Deploy to GKE
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
@@ -68,7 +72,7 @@ jobs:
           kubectl apply -f ./redshift-analytics-service/manifests/
           kubectl apply -f ./ingress.yaml
 
-      # Step 7: Wait for services to be ready
+      # Step 8: Wait for services to be ready
       - name: Wait for Kubernetes resources to be ready
         run: |
           kubectl wait --for=condition=available --timeout=600s deployment/agent-service
@@ -76,21 +80,64 @@ jobs:
           kubectl wait --for=condition=available --timeout=600s deployment/notification-service
           kubectl wait --for=condition=available --timeout=600s deployment/aggregator-service
 
-      # Step 8: Trigger Redshift Analytics CronJob manually (optional)
+      # Step 9: Trigger Redshift Analytics CronJob manually
       - name: Trigger Redshift CronJob manually
         run: |
           kubectl create job --from=cronjob/redshift-analytics-cronjob redshift-analytics-manual || echo "CronJob not found, skipping."
 
-      # Step 9: Post-deploy verification
+      # Step 10: Post-deploy verification
       - name: Verify Deployments
         run: |
           kubectl get pods -A
           kubectl get services -A
-          kubectl get ingress -A  
+          kubectl get ingress -A
+
+      # Step 11: Fetch GKE LoadBalancer IP and print
+      - name: Get GKE Ingress External IP
+        run: |
+          echo "Fetching external IP for ingress..."
+          for i in {1..30}; do
+            INGRESS_IP=$(kubectl get ingress mooninsurance-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            if [[ -n "$INGRESS_IP" ]]; then
+              echo "Ingress IP: $INGRESS_IP"
+              echo "::set-output name=ingress_ip::$INGRESS_IP"
+              break
+            fi
+            echo "Waiting for ingress IP allocation... ($i/30)"
+            sleep 10
+          done
+
+      # Step 12: Validate Redshift Connection
+      - name: Validate Redshift connection
+        env:
+          REDSHIFT_HOST: ${{ secrets.REDSHIFT_HOST }}
+          REDSHIFT_PORT: ${{ secrets.REDSHIFT_PORT }}
+          REDSHIFT_USER: ${{ secrets.REDSHIFT_USER }}
+          REDSHIFT_PASSWORD: ${{ secrets.REDSHIFT_PASSWORD }}
+          REDSHIFT_DBNAME: ${{ secrets.REDSHIFT_DBNAME }}
+        run: |
+          echo "Testing Redshift connection..."
+          pip install psycopg2-binary
+          python -c "
+import psycopg2
+try:
+    conn = psycopg2.connect(
+        host='${REDSHIFT_HOST}',
+        port=${REDSHIFT_PORT},
+        user='${REDSHIFT_USER}',
+        password='${REDSHIFT_PASSWORD}',
+        dbname='${REDSHIFT_DBNAME}'
+    )
+    print('✅ Successfully connected to Redshift!')
+    conn.close()
+except Exception as e:
+    print(f'❌ Redshift connection failed: {e}')
+    exit(1)
+"
 
 
 
-# name: GKE CI/CD
+# name: GCP GKE CI/CD Pipeline
 
 # on:
 #   push:
@@ -106,133 +153,225 @@ jobs:
 
 #     env:
 #       PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-#       GAR_LOCATION: us-central1
 #       CLUSTER_NAME: moon-insurance-cluster
-#       CLUSTER_ZONE: us-central1-c 
+#       CLUSTER_ZONE: us-central1-c
 
 #     steps:
 #       # Step 1: Checkout the repository
-#       - name: Checkout Repository
+#       - name: Checkout repository
 #         uses: actions/checkout@v3
 
-#       # Step 2: Install Dependencies
-#       - name: Install Dependencies
-#         run: |
-#           echo "Installing necessary dependencies..."
-#           sudo apt-get update
-#           sudo apt-get install -y apt-transport-https curl conntrack socat
-#           echo "Dependencies installed."
+#       # Step 2: Set up Cloud SDK
+#       - name: Set up Google Cloud SDK
+#         uses: google-github-actions/setup-gcloud@v2
+#         with:
+#           project_id: ${{ secrets.GCP_PROJECT_ID }}
+#           service_account_key: ${{ secrets.GCP_SA_KEY }}
+#           export_default_credentials: true
 
-#       # Step 3: Install Minikube
-#       - name: Install Minikube
+#       # Step 3: Configure Docker to use gcloud as a credential helper
+#       - name: Configure Docker for GCR
 #         run: |
-#           echo "Installing Minikube..."
-#           curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-#           sudo install minikube-linux-amd64 /usr/local/bin/minikube
-#           echo "Minikube installed."
+#           gcloud auth configure-docker
 
-#       # Step 4: Start Minikube
-#       - name: Start Minikube
+#       # Step 4: Build and push Docker images to GCR
+#       - name: Build and Push Docker Images
 #         run: |
-#           echo "Starting Minikube with Docker driver..."
-#           minikube start --driver=docker
-#           minikube addons enable ingress
-#           echo "Minikube started and ingress enabled."
-
-#       # Step 5: Build Docker Images inside Minikube
-#       - name: Build Docker Images
-#         run: |
-#           eval $(minikube docker-env)
-#           declare -A services=(
-#             ["AgentService"]="agent-service"
-#             ["IntegrationService"]="integration-service"
-#             ["NotificationService"]="notification-service"
-#             ["AggregatorService"]="aggregator-service"
-#             ["RedshiftAnalyticsService"]="redshift-analytics-service"
-#           )
-#           for service in "${!services[@]}"; do
-#             echo "Building Docker image for $service..."
-#             docker build -t "${services[$service]}:latest" -f "$service/docker/Dockerfile" "$service"
+#           SERVICES=("agent-service" "integration-service" "notification-service" "aggregator-service" "redshift-analytics-service")
+#           for SERVICE in "${SERVICES[@]}"; do
+#             echo "Building image for $SERVICE..."
+#             docker build -t gcr.io/${PROJECT_ID}/${SERVICE}:latest ./$SERVICE
+#             echo "Pushing image for $SERVICE..."
+#             docker push gcr.io/${PROJECT_ID}/${SERVICE}:latest
 #           done
-#           echo "Docker images built successfully."
 
-#       # Step 6: Deploy Kubernetes Resources
-#       - name: Deploy Kubernetes Resources
+#       # Step 5: Get GKE cluster credentials
+#       - name: Get GKE credentials
+#         run: |
+#           gcloud container clusters get-credentials $CLUSTER_NAME --zone $CLUSTER_ZONE --project $PROJECT_ID
+
+#       # Step 6: Deploy Kubernetes manifests
+#       - name: Deploy to GKE
 #         env:
-#           MONGO_URI: "mongodb+srv://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance.j7nq4hq.mongodb.net/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"
+#           MONGO_URI: ${{ secrets.MONGO_URI }}
 #           REDSHIFT_HOST: ${{ secrets.REDSHIFT_HOST }}
 #           REDSHIFT_PORT: ${{ secrets.REDSHIFT_PORT }}
 #           REDSHIFT_USER: ${{ secrets.REDSHIFT_USER }}
 #           REDSHIFT_PASSWORD: ${{ secrets.REDSHIFT_PASSWORD }}
 #           REDSHIFT_DBNAME: ${{ secrets.REDSHIFT_DBNAME }}
 #         run: |
-#           echo "Applying Kubernetes manifests..."
-
-#           declare -A services=(
-#             ["AgentService"]="agent-service"
-#             ["IntegrationService"]="integration-service"
-#             ["NotificationService"]="notification-service"
-#             ["AggregatorService"]="aggregator-service"
-#             ["RedshiftAnalyticsService"]="redshift-analytics-service"
-#           )
-
-#           for service in "${!services[@]}"; do
-#             echo "Applying manifests for $service..."
-#             kubectl apply -f "./$service/manifests/"
-#           done
-
-#           echo "Applying ingress..."
+#           kubectl apply -f ./agent-service/manifests/
+#           kubectl apply -f ./integration-service/manifests/
+#           kubectl apply -f ./notification-service/manifests/
+#           kubectl apply -f ./aggregator-service/manifests/
+#           kubectl apply -f ./redshift-analytics-service/manifests/
 #           kubectl apply -f ./ingress.yaml
 
-#           echo "Deployment completed."
-
-#       # Step 6.1: Verify CronJobs
-#       - name: Verify CronJobs
+#       # Step 7: Wait for services to be ready
+#       - name: Wait for Kubernetes resources to be ready
 #         run: |
-#           echo "Listing all CronJobs for verification..."
-#           kubectl get cronjobs
-#           echo "CronJobs listed successfully."
+#           kubectl wait --for=condition=available --timeout=600s deployment/agent-service
+#           kubectl wait --for=condition=available --timeout=600s deployment/integration-service
+#           kubectl wait --for=condition=available --timeout=600s deployment/notification-service
+#           kubectl wait --for=condition=available --timeout=600s deployment/aggregator-service
 
-
-#       # Step 7: Trigger Redshift CronJob
-#       - name: Trigger Redshift CronJob
+#       # Step 8: Trigger Redshift Analytics CronJob manually (optional)
+#       - name: Trigger Redshift CronJob manually
 #         run: |
-#           echo "Triggering Redshift CronJob manually..."
 #           kubectl create job --from=cronjob/redshift-analytics-cronjob redshift-analytics-manual || echo "CronJob not found, skipping."
-#           kubectl get jobs
 
-#       # Step 8: Wait for Pods to Be Ready
-#       - name: Wait for Pods to be Ready
+#       # Step 9: Post-deploy verification
+#       - name: Verify Deployments
 #         run: |
-#           echo "Waiting for pods to be ready..."
-#           sleep 180
-#           kubectl get pods
-#           kubectl wait --for=condition=ready pod --all --timeout=300s
-#           echo "All pods are ready."
+#           kubectl get pods -A
+#           kubectl get services -A
+#           kubectl get ingress -A  
 
-#       # Step 9: Verify Job Status
-#       - name: Verify Jobs
-#         run: |
-#           echo "Checking jobs status..."
-#           kubectl get jobs
-#           echo "Jobs status verified."
 
-#       # Step 10: Run Tests
-#       - name: Run Tests
-#         run: |
-#           echo "Running tests..."
-#           python test.py || echo "test.py not found, skipping."
-#           echo "Tests executed successfully."
 
-#       # Step 11: Commit Changes
-#       - name: Commit Changes to Git
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#         run: |
-#           echo "Committing changes to Git..."
-#           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-#           git config --global user.name "github-actions[bot]"
-#           git add .
-#           git commit -m "Automated CI/CD pipeline updates."
-#           git push "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
-#           echo "Changes committed to Git."
+# # name: GKE CI/CD
+
+# # on:
+# #   push:
+# #     branches:
+# #       - main
+# #   pull_request:
+# #     branches:
+# #       - main
+
+# # jobs:
+# #   build-and-deploy:
+# #     runs-on: ubuntu-latest
+
+# #     env:
+# #       PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+# #       GAR_LOCATION: us-central1
+# #       CLUSTER_NAME: moon-insurance-cluster
+# #       CLUSTER_ZONE: us-central1-c 
+
+# #     steps:
+# #       # Step 1: Checkout the repository
+# #       - name: Checkout Repository
+# #         uses: actions/checkout@v3
+
+# #       # Step 2: Install Dependencies
+# #       - name: Install Dependencies
+# #         run: |
+# #           echo "Installing necessary dependencies..."
+# #           sudo apt-get update
+# #           sudo apt-get install -y apt-transport-https curl conntrack socat
+# #           echo "Dependencies installed."
+
+# #       # Step 3: Install Minikube
+# #       - name: Install Minikube
+# #         run: |
+# #           echo "Installing Minikube..."
+# #           curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+# #           sudo install minikube-linux-amd64 /usr/local/bin/minikube
+# #           echo "Minikube installed."
+
+# #       # Step 4: Start Minikube
+# #       - name: Start Minikube
+# #         run: |
+# #           echo "Starting Minikube with Docker driver..."
+# #           minikube start --driver=docker
+# #           minikube addons enable ingress
+# #           echo "Minikube started and ingress enabled."
+
+# #       # Step 5: Build Docker Images inside Minikube
+# #       - name: Build Docker Images
+# #         run: |
+# #           eval $(minikube docker-env)
+# #           declare -A services=(
+# #             ["AgentService"]="agent-service"
+# #             ["IntegrationService"]="integration-service"
+# #             ["NotificationService"]="notification-service"
+# #             ["AggregatorService"]="aggregator-service"
+# #             ["RedshiftAnalyticsService"]="redshift-analytics-service"
+# #           )
+# #           for service in "${!services[@]}"; do
+# #             echo "Building Docker image for $service..."
+# #             docker build -t "${services[$service]}:latest" -f "$service/docker/Dockerfile" "$service"
+# #           done
+# #           echo "Docker images built successfully."
+
+# #       # Step 6: Deploy Kubernetes Resources
+# #       - name: Deploy Kubernetes Resources
+# #         env:
+# #           MONGO_URI: "mongodb+srv://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance.j7nq4hq.mongodb.net/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"
+# #           REDSHIFT_HOST: ${{ secrets.REDSHIFT_HOST }}
+# #           REDSHIFT_PORT: ${{ secrets.REDSHIFT_PORT }}
+# #           REDSHIFT_USER: ${{ secrets.REDSHIFT_USER }}
+# #           REDSHIFT_PASSWORD: ${{ secrets.REDSHIFT_PASSWORD }}
+# #           REDSHIFT_DBNAME: ${{ secrets.REDSHIFT_DBNAME }}
+# #         run: |
+# #           echo "Applying Kubernetes manifests..."
+
+# #           declare -A services=(
+# #             ["AgentService"]="agent-service"
+# #             ["IntegrationService"]="integration-service"
+# #             ["NotificationService"]="notification-service"
+# #             ["AggregatorService"]="aggregator-service"
+# #             ["RedshiftAnalyticsService"]="redshift-analytics-service"
+# #           )
+
+# #           for service in "${!services[@]}"; do
+# #             echo "Applying manifests for $service..."
+# #             kubectl apply -f "./$service/manifests/"
+# #           done
+
+# #           echo "Applying ingress..."
+# #           kubectl apply -f ./ingress.yaml
+
+# #           echo "Deployment completed."
+
+# #       # Step 6.1: Verify CronJobs
+# #       - name: Verify CronJobs
+# #         run: |
+# #           echo "Listing all CronJobs for verification..."
+# #           kubectl get cronjobs
+# #           echo "CronJobs listed successfully."
+
+
+# #       # Step 7: Trigger Redshift CronJob
+# #       - name: Trigger Redshift CronJob
+# #         run: |
+# #           echo "Triggering Redshift CronJob manually..."
+# #           kubectl create job --from=cronjob/redshift-analytics-cronjob redshift-analytics-manual || echo "CronJob not found, skipping."
+# #           kubectl get jobs
+
+# #       # Step 8: Wait for Pods to Be Ready
+# #       - name: Wait for Pods to be Ready
+# #         run: |
+# #           echo "Waiting for pods to be ready..."
+# #           sleep 180
+# #           kubectl get pods
+# #           kubectl wait --for=condition=ready pod --all --timeout=300s
+# #           echo "All pods are ready."
+
+# #       # Step 9: Verify Job Status
+# #       - name: Verify Jobs
+# #         run: |
+# #           echo "Checking jobs status..."
+# #           kubectl get jobs
+# #           echo "Jobs status verified."
+
+# #       # Step 10: Run Tests
+# #       - name: Run Tests
+# #         run: |
+# #           echo "Running tests..."
+# #           python test.py || echo "test.py not found, skipping."
+# #           echo "Tests executed successfully."
+
+# #       # Step 11: Commit Changes
+# #       - name: Commit Changes to Git
+# #         env:
+# #           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+# #         run: |
+# #           echo "Committing changes to Git..."
+# #           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+# #           git config --global user.name "github-actions[bot]"
+# #           git add .
+# #           git commit -m "Automated CI/CD pipeline updates."
+# #           git push "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+# #           echo "Changes committed to Git."
