@@ -18,8 +18,11 @@ spec:
           ports:
             - containerPort: 5001
           env:
-            - name: MONGO_URI
-              value: "${MONGO_URI}"
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: mooninsurance-secrets
+              key: mongo-uri
 
 # apiVersion: apps/v1
 # kind: Deployment

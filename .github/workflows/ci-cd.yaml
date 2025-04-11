@@ -74,7 +74,11 @@ jobs:
           echo "Building and pushing image: ${{ matrix.image_name }}"
           docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/mooninsurance-repo/${{ matrix.image_name }}:latest -f ./${{ matrix.path }}/docker/Dockerfile ./${{ matrix.path }}
           docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/mooninsurance-repo/${{ matrix.image_name }}:latest
-            
+
+      - name: 🔍 Verify Docker Images in Artifact Registry
+        run: |
+          echo "Verifying image exists for: ${{ matrix.image_name }}"
+          gcloud artifacts docker images list ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/mooninsurance-repo --filter="name:${{ matrix.image_name }}"
 
       - name: 🚀 Deploy to GKE - ${{ matrix.service }}
         run: |
@@ -83,6 +87,7 @@ jobs:
   post-deploy:
     needs: build-and-deploy
     runs-on: ubuntu-latest
+
     steps:
       - name: ✅ Checkout code
         uses: actions/checkout@v3
@@ -105,19 +110,28 @@ jobs:
             kubectl rollout status deployment/$deploy
           done
 
+      - name: 🐛 Auto Debug Logs (If Rollout Fails)
+        if: failure()
+        run: |
+          echo "⚠️ Rollout failed. Fetching debug logs..."
+          kubectl get all -A
+          for deploy in agent-service integration-service notification-service aggregator-service redshift-analytics-service; do
+            echo "Describing deployment: $deploy"
+            kubectl describe deployment/$deploy || true
+            echo "Fetching pods for deployment: $deploy"
+            PODS=$(kubectl get pods -l app=$deploy -o jsonpath="{.items[*].metadata.name}")
+            for pod in $PODS; do
+              echo "Logs for pod: $pod"
+              kubectl logs $pod --all-containers=true || true
+            done
+          done
+
       - name: 📮 Run Postman Collection Tests
         run: |
           npm install -g newman
           INGRESS_IP=$(kubectl get ingress mooninsurance-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
           echo "Running Postman tests against IP: $INGRESS_IP"
           newman run ./postman_collection.json --env-var "baseUrl=http://$INGRESS_IP"
-        
-        
-
-      # - name: 📮 Run Postman Collection Tests
-      #   uses: matt-ball/newman-action@v2
-      #   with:
-      #     collection: ./postman_collection.json
 
       - name: 🧩 Redshift SQL Validation
         run: |
@@ -171,122 +185,4 @@ jobs:
         run: |
           echo "![CI/CD Status](https://github.com/${{ github.repository }}/actions/workflows/ci-cd.yaml/badge.svg)" > badge.md
 
-
           
-# name: GCP GKE CI/CD Pipeline
-
-# on:
-#   push:
-#     branches:
-#       - main
-#   pull_request:
-#     branches:
-#       - main
-
-# jobs:
-#   build-and-deploy:
-#     runs-on: ubuntu-latest
-
-#     env:
-#       PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-#       CLUSTER_NAME: moon-insurance-cluster
-#       CLUSTER_ZONE: us-central1-c
-#       REGION: us-central1
-#       REPO_NAME: mooninsurance-repo
-
-#     steps:
-#       # Step 1: Checkout the repository
-#       - name: Checkout repository
-#         uses: actions/checkout@v3
-
-#       # Step 2: Authenticate to Google Cloud
-#       - name: Authenticate to Google Cloud
-#         uses: google-github-actions/auth@v2
-#         with:
-#           credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-#       # Step 3: Set up Google Cloud SDK
-#       - name: Set up Google Cloud SDK
-#         uses: google-github-actions/setup-gcloud@v2
-#         with:
-#           project_id: ${{ secrets.GCP_PROJECT_ID }}
-
-#       # Step 4: Install GKE gcloud auth plugin
-#       - name: Install GKE gcloud auth plugin
-#         run: |
-#           gcloud components install gke-gcloud-auth-plugin --quiet
-
-
-#       # Step 5: Configure Docker for Artifact Registry
-#       - name: Configure Docker for Artifact Registry
-#         run: |
-#           gcloud auth configure-docker $REGION-docker.pkg.dev
-
-#       # Step 6: Build and Push Docker Images
-#       - name: Build and Push Docker Images
-#         run: |
-#           SERVICES=("agent-service" "integration-service" "notification-service" "aggregator-service" "redshift-analytics-service")
-#           for SERVICE in "${SERVICES[@]}"; do
-#             echo "Building image for $SERVICE..."
-#             docker build -t us-central1-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE}:latest -f ./${SERVICE}/docker/Dockerfile ./${SERVICE}
-#             echo "Pushing image for $SERVICE..."
-#             docker push us-central1-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE}:latest
-#           done
-
-#       # Step 7: Get GKE cluster credentials
-#       - name: Get GKE credentials
-#         run: |
-#           gcloud container clusters get-credentials $CLUSTER_NAME --zone $CLUSTER_ZONE --project $PROJECT_ID
-
-#       # Step 8: Deploy Kubernetes manifests
-#       - name: Deploy to GKE
-#         env:
-#           MONGO_URI: ${{ secrets.MONGO_URI }}
-#           REDSHIFT_HOST: ${{ secrets.REDSHIFT_HOST }}
-#           REDSHIFT_PORT: ${{ secrets.REDSHIFT_PORT }}
-#           REDSHIFT_USER: ${{ secrets.REDSHIFT_USER }}
-#           REDSHIFT_PASSWORD: ${{ secrets.REDSHIFT_PASSWORD }}
-#           REDSHIFT_DBNAME: ${{ secrets.REDSHIFT_DBNAME }}
-#         run: |
-#           kubectl apply -f ./agent-service/manifests/
-#           kubectl apply -f ./integration-service/manifests/
-#           kubectl apply -f ./notification-service/manifests/
-#           kubectl apply -f ./aggregator-service/manifests/
-#           kubectl apply -f ./redshift-analytics-service/manifests/
-#           kubectl apply -f ./ingress.yaml
-
-#       # Step 9: Wait for services to be ready
-#       - name: Wait for Kubernetes resources to be ready
-#         run: |
-#           kubectl wait --for=condition=available --timeout=600s deployment/agent-service
-#           kubectl wait --for=condition=available --timeout=600s deployment/integration-service
-#           kubectl wait --for=condition=available --timeout=600s deployment/notification-service
-#           kubectl wait --for=condition=available --timeout=600s deployment/aggregator-service
-
-#       # Step 10: Trigger Redshift CronJob manually
-#       - name: Trigger Redshift CronJob manually
-#         run: |
-#           kubectl create job --from=cronjob/redshift-analytics-cronjob redshift-analytics-manual || echo "CronJob not found, skipping."
-
-#       # Step 11: Post-deploy verification
-#       - name: Verify Deployments
-#         run: |
-#           kubectl get pods -A
-#           kubectl get services -A
-#           kubectl get ingress -A
-
-#       # Step 12: Fetch GKE LoadBalancer IP and print
-#       - name: Get GKE Ingress External IP
-#         run: |
-#           echo "Fetching external IP for ingress..."
-#           for i in {1..30}; do
-#             INGRESS_IP=$(kubectl get ingress mooninsurance-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-#             if [[ -n "$INGRESS_IP" ]]; then
-#               echo "Ingress IP: $INGRESS_IP"
-#               echo "::set-output name=ingress_ip::$INGRESS_IP"
-#               break
-#             fi
-#             echo "Waiting for ingress IP allocation... ($i/30)"
-#             sleep 10
-#           done
-
