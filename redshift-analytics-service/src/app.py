@@ -6,8 +6,8 @@ import os
 app = Flask(__name__)
 
 # MongoDB Configuration
-# mongo_uri = os.environ.get("MONGO_URI")
-mongo_uri = "mongodb://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance@j7nq4hq.mongodb.net:27017/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"  # Replace with your MongoDB URI
+mongo_uri = os.environ.get("MONGO_URI")
+# mongo_uri = "mongodb://rajithawijesinghe74:ohClusterMoonInsuarancermooninsuarance@j7nq4hq.mongodb.net:27017/?retryWrites=true&w=majority&appName=ClusterMoonInsuarance"  # Replace with your MongoDB URI
 mongo_client = MongoClient(mongo_uri)
 mongo_db = mongo_client["MoonInsuranceDB"]
 

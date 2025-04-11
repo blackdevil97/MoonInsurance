@@ -4,7 +4,7 @@ metadata:
   name: redshift-analytics-service
 spec:
   selector:
-    app: redshift-analytics
+    app: redshift-analytics-service
   ports:
     - protocol: TCP
       port: 5005
