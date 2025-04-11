@@ -106,9 +106,18 @@ jobs:
           done
 
       - name: 📮 Run Postman Collection Tests
-        uses: matt-ball/newman-action@v2
-        with:
-          collection: ./postman_collection.json
+        run: |
+          npm install -g newman
+          INGRESS_IP=$(kubectl get ingress mooninsurance-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "Running Postman tests against IP: $INGRESS_IP"
+          newman run ./postman_collection.json --env-var "baseUrl=http://$INGRESS_IP"
+        
+        
+
+      # - name: 📮 Run Postman Collection Tests
+      #   uses: matt-ball/newman-action@v2
+      #   with:
+      #     collection: ./postman_collection.json
 
       - name: 🧩 Redshift SQL Validation
         run: |
