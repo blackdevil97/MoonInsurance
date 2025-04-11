@@ -16,6 +16,8 @@ jobs:
       PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       CLUSTER_NAME: moon-insurance-cluster
       CLUSTER_ZONE: us-central1-c
+      REGION: us-central1
+      REPO_NAME: mooninsurance-repo
 
     steps:
       # Step 1: Checkout the repository
@@ -35,19 +37,19 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       # Step 4: Configure Docker to use gcloud as a credential helper
-      - name: Configure Docker for GCR
+      - name: Configure Docker for Artifact Registry
         run: |
-          gcloud auth configure-docker
+          gcloud auth configure-docker $REGION-docker.pkg.dev
 
-      # Step 5: Build and push Docker images to GCR
+      # Step 5: Build and push Docker images to Artifact Registry
       - name: Build and Push Docker Images
         run: |
           SERVICES=("agent-service" "integration-service" "notification-service" "aggregator-service" "redshift-analytics-service")
           for SERVICE in "${SERVICES[@]}"; do
             echo "Building image for $SERVICE..."
-            docker build -t gcr.io/${PROJECT_ID}/${SERVICE}:latest -f ./${SERVICE}/docker/Dockerfile ./${SERVICE}
+            docker build -t us-central1-docker.pkg.dev/${PROJECT_ID}/mooninsurance-repo/${SERVICE}:latest -f ./${SERVICE}/docker/Dockerfile ./${SERVICE}
             echo "Pushing image for $SERVICE..."
-            docker push gcr.io/${PROJECT_ID}/${SERVICE}:latest
+            docker push us-central1-docker.pkg.dev/${PROJECT_ID}/mooninsurance-repo/${SERVICE}:latest
           done
 
       # Step 6: Get GKE cluster credentials
@@ -106,5 +108,4 @@ jobs:
             echo "Waiting for ingress IP allocation... ($i/30)"
             sleep 10
           done
-
           
