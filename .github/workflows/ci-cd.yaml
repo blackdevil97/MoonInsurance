@@ -145,7 +145,6 @@ jobs:
           REDSHIFT_PASSWORD: ${{ secrets.REDSHIFT_PASSWORD }}
           REDSHIFT_DBNAME: ${{ secrets.REDSHIFT_DBNAME }}
 
-
       - name: 📊 Final Summary of Endpoints
         run: |
           echo "🌐 Fetching Ingress External IP..."
@@ -154,11 +153,15 @@ jobs:
             if [[ -n "$INGRESS_IP" ]]; then
               echo "Ingress IP found: $INGRESS_IP"
               echo "🚀 Access your services:"
-              echo "http://$INGRESS_IP/agent-service/agents"
-              echo "http://$INGRESS_IP/integration-service/sync"
-              echo "http://$INGRESS_IP/notification-service/notify"
-              echo "http://$INGRESS_IP/aggregator-service/aggregate"
-              echo "http://$INGRESS_IP/redshift-analytics-service/analyze"
+              echo "http://$INGRESS_IP/agent"
+              echo "http://$INGRESS_IP/sales"
+              echo "http://$INGRESS_IP/notification/check_target"
+              echo "http://$INGRESS_IP/aggregation/best_teams"
+              echo "http://$INGRESS_IP/aggregation/best_products"
+              echo "http://$INGRESS_IP/aggregation/branch_performance"
+              echo "http://$INGRESS_IP/sync/best_teams"
+              echo "http://$INGRESS_IP/sync/products_achieving_targets"
+              echo "http://$INGRESS_IP/sync/branch_wise_performance"
               break
             fi
             sleep 10

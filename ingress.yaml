@@ -10,7 +10,6 @@ spec:
     - host: mooninsurance.local
       http:
         paths:
-          # 🎯 Agent Service
           - path: /agent
             pathType: Prefix
             backend:
@@ -18,8 +17,6 @@ spec:
                 name: agent-service
                 port:
                   number: 5001
-
-          # 🎯 Integration Service (Sales)
           - path: /sales
             pathType: Prefix
             backend:
@@ -27,8 +24,6 @@ spec:
                 name: integration-service
                 port:
                   number: 5002
-
-          # 🎯 Notification Service
           - path: /notification/check_target
             pathType: Prefix
             backend:
@@ -36,8 +31,6 @@ spec:
                 name: notification-service
                 port:
                   number: 5003
-
-          # 🎯 Aggregator Service (Insights)
           - path: /aggregation/best_teams
             pathType: Prefix
             backend:
@@ -59,8 +52,6 @@ spec:
                 name: aggregator-service
                 port:
                   number: 5004
-
-          # 🎯 Redshift Analytics Service (Sync to Data Warehouse)
           - path: /sync/best_teams
             pathType: Prefix
             backend:
