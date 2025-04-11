@@ -118,7 +118,7 @@ jobs:
         run: |
           echo "Testing Redshift connection..."
           pip install psycopg2-binary
-          python -c '
+          python <<EOF
 import psycopg2
 try:
     conn = psycopg2.connect(
@@ -133,4 +133,4 @@ try:
 except Exception as e:
     print(f"❌ Redshift connection failed: {e}")
     exit(1)
-'
+EOF
