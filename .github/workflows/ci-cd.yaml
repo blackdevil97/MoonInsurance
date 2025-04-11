@@ -36,28 +36,34 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      # Step 4: Configure Docker to use gcloud as a credential helper
+      # Step 4: Install GKE gcloud auth plugin
+      - name: Install GKE gcloud auth plugin
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin
+
+      # Step 5: Configure Docker for Artifact Registry
       - name: Configure Docker for Artifact Registry
         run: |
           gcloud auth configure-docker $REGION-docker.pkg.dev
 
-      # Step 5: Build and push Docker images to Artifact Registry
+      # Step 6: Build and Push Docker Images
       - name: Build and Push Docker Images
         run: |
           SERVICES=("agent-service" "integration-service" "notification-service" "aggregator-service" "redshift-analytics-service")
           for SERVICE in "${SERVICES[@]}"; do
             echo "Building image for $SERVICE..."
-            docker build -t us-central1-docker.pkg.dev/${PROJECT_ID}/mooninsurance-repo/${SERVICE}:latest -f ./${SERVICE}/docker/Dockerfile ./${SERVICE}
+            docker build -t us-central1-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE}:latest -f ./${SERVICE}/docker/Dockerfile ./${SERVICE}
             echo "Pushing image for $SERVICE..."
-            docker push us-central1-docker.pkg.dev/${PROJECT_ID}/mooninsurance-repo/${SERVICE}:latest
+            docker push us-central1-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE}:latest
           done
 
-      # Step 6: Get GKE cluster credentials
+      # Step 7: Get GKE cluster credentials
       - name: Get GKE credentials
         run: |
           gcloud container clusters get-credentials $CLUSTER_NAME --zone $CLUSTER_ZONE --project $PROJECT_ID
 
-      # Step 7: Deploy Kubernetes manifests
+      # Step 8: Deploy Kubernetes manifests
       - name: Deploy to GKE
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
@@ -74,7 +80,7 @@ jobs:
           kubectl apply -f ./redshift-analytics-service/manifests/
           kubectl apply -f ./ingress.yaml
 
-      # Step 8: Wait for services to be ready
+      # Step 9: Wait for services to be ready
       - name: Wait for Kubernetes resources to be ready
         run: |
           kubectl wait --for=condition=available --timeout=600s deployment/agent-service
@@ -82,19 +88,19 @@ jobs:
           kubectl wait --for=condition=available --timeout=600s deployment/notification-service
           kubectl wait --for=condition=available --timeout=600s deployment/aggregator-service
 
-      # Step 9: Trigger Redshift Analytics CronJob manually
+      # Step 10: Trigger Redshift CronJob manually
       - name: Trigger Redshift CronJob manually
         run: |
           kubectl create job --from=cronjob/redshift-analytics-cronjob redshift-analytics-manual || echo "CronJob not found, skipping."
 
-      # Step 10: Post-deploy verification
+      # Step 11: Post-deploy verification
       - name: Verify Deployments
         run: |
           kubectl get pods -A
           kubectl get services -A
           kubectl get ingress -A
 
-      # Step 11: Fetch GKE LoadBalancer IP and print
+      # Step 12: Fetch GKE LoadBalancer IP and print
       - name: Get GKE Ingress External IP
         run: |
           echo "Fetching external IP for ingress..."
@@ -108,4 +114,5 @@ jobs:
             echo "Waiting for ingress IP allocation... ($i/30)"
             sleep 10
           done
+
           
