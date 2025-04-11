@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: redshift-analytics-cronjob
-  namespace: mooninsurance
+  # namespace: mooninsurance
 spec:
   schedule: "0 4 * * *" # Daily at 4 AM
   jobTemplate:
