@@ -1,117 +1,282 @@
-name: GCP GKE CI/CD Pipeline
+name: Build and Deploy to GKE
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GKE_CLUSTER: moon-insurance-cluster
+  GKE_ZONE: us-central1-c
+  REGION: us-central1
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
-    env:
-      PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-      CLUSTER_NAME: moon-insurance-cluster
-      CLUSTER_ZONE: us-central1-c
-      REGION: us-central1
-      REPO_NAME: mooninsurance-repo
+    strategy:
+      matrix:
+        service: [ agent-service, integration-service, notification-service, aggregator-service, redshift-analytics-service ]
+        include:
+          - service: agent-service
+            image_name: agent-service
+            path: agent-service
+
+          - service: integration-service
+            image_name: integration-service
+            path: integration-service
+
+          - service: notification-service
+            image_name: notification-service
+            path: notification-service
+
+          - service: aggregator-service
+            image_name: aggregator-service
+            path: aggregator-service
+
+          - service: redshift-analytics-service
+            image_name: redshift-analytics-service
+            path: redshift-analytics-service
 
     steps:
-      # Step 1: Checkout the repository
-      - name: Checkout repository
+      - name: ✅ Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Authenticate to Google Cloud
-      - name: Authenticate to Google Cloud
+      - name: ✅ Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      # Step 3: Set up Google Cloud SDK
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+      - name: ✅ Configure Docker
+        run: gcloud --quiet auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: ✅ Get GKE Credentials
+        uses: google-github-actions/get-gke-credentials@v2
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          cluster_name: ${{ env.GKE_CLUSTER }}
+          location: ${{ env.GKE_ZONE }}
 
-      # Step 4: Install GKE gcloud auth plugin
-      - name: Install GKE gcloud auth plugin
+      - name: ✅ Create Kubernetes Secrets
         run: |
-          gcloud components install gke-gcloud-auth-plugin --quiet
+          kubectl create secret generic mooninsurance-secrets \
+            --from-literal=mongo-uri="${{ secrets.MONGO_URI }}" \
+            --from-literal=redshift-host="${{ secrets.REDSHIFT_HOST }}" \
+            --from-literal=redshift-user="${{ secrets.REDSHIFT_USER }}" \
+            --from-literal=redshift-password="${{ secrets.REDSHIFT_PASSWORD }}" \
+            --from-literal=redshift-port="${{ secrets.REDSHIFT_PORT }}" \
+            --from-literal=redshift-dbname="${{ secrets.REDSHIFT_DBNAME }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
 
-
-      # Step 5: Configure Docker for Artifact Registry
-      - name: Configure Docker for Artifact Registry
+      - name: 🛠️ Build and Push Docker Image - ${{ matrix.service }}
         run: |
-          gcloud auth configure-docker $REGION-docker.pkg.dev
+          echo "Building and pushing image: ${{ matrix.image_name }}"
+          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/mooninsurance-repo/${{ matrix.image_name }}:latest ./${{ matrix.path }}
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/mooninsurance-repo/${{ matrix.image_name }}:latest
 
-      # Step 6: Build and Push Docker Images
-      - name: Build and Push Docker Images
+      - name: 🚀 Deploy to GKE - ${{ matrix.service }}
         run: |
-          SERVICES=("agent-service" "integration-service" "notification-service" "aggregator-service" "redshift-analytics-service")
-          for SERVICE in "${SERVICES[@]}"; do
-            echo "Building image for $SERVICE..."
-            docker build -t us-central1-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE}:latest -f ./${SERVICE}/docker/Dockerfile ./${SERVICE}
-            echo "Pushing image for $SERVICE..."
-            docker push us-central1-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE}:latest
+          kubectl apply -f ./${{ matrix.path }}/manifests/
+
+  post-deploy:
+    needs: build-and-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: ✅ Checkout code
+        uses: actions/checkout@v3
+
+      - name: ✅ Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: ✅ Get GKE Credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: moon-insurance-cluster
+          location: us-central1-c
+
+      - name: 🕒 Wait for Services to be Ready
+        run: |
+          for deploy in agent-service integration-service notification-service aggregator-service redshift-analytics-service; do
+            echo "Waiting for deployment/$deploy to be ready..."
+            kubectl rollout status deployment/$deploy
           done
 
-      # Step 7: Get GKE cluster credentials
-      - name: Get GKE credentials
-        run: |
-          gcloud container clusters get-credentials $CLUSTER_NAME --zone $CLUSTER_ZONE --project $PROJECT_ID
+      - name: 📮 Run Postman Collection Tests
+        uses: matt-ball/newman-action@v2
+        with:
+          collection: ./postman_collection.json
 
-      # Step 8: Deploy Kubernetes manifests
-      - name: Deploy to GKE
+      - name: 🧩 Redshift SQL Validation
+        run: |
+          pip install psycopg2-binary
+          python3 <<EOF
+          import psycopg2
+          import os
+
+          conn = psycopg2.connect(
+              host=os.getenv("REDSHIFT_HOST"),
+              port=os.getenv("REDSHIFT_PORT"),
+              user=os.getenv("REDSHIFT_USER"),
+              password=os.getenv("REDSHIFT_PASSWORD"),
+              dbname=os.getenv("REDSHIFT_DBNAME")
+          )
+
+          cur = conn.cursor()
+          cur.execute("SELECT COUNT(*) FROM sales_data;")
+          count = cur.fetchone()[0]
+          print(f"✅ Redshift Sales Data Count: {count}")
+
+          cur.close()
+          conn.close()
+          EOF
         env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
           REDSHIFT_HOST: ${{ secrets.REDSHIFT_HOST }}
           REDSHIFT_PORT: ${{ secrets.REDSHIFT_PORT }}
           REDSHIFT_USER: ${{ secrets.REDSHIFT_USER }}
           REDSHIFT_PASSWORD: ${{ secrets.REDSHIFT_PASSWORD }}
           REDSHIFT_DBNAME: ${{ secrets.REDSHIFT_DBNAME }}
-        run: |
-          kubectl apply -f ./agent-service/manifests/
-          kubectl apply -f ./integration-service/manifests/
-          kubectl apply -f ./notification-service/manifests/
-          kubectl apply -f ./aggregator-service/manifests/
-          kubectl apply -f ./redshift-analytics-service/manifests/
-          kubectl apply -f ./ingress.yaml
 
-      # Step 9: Wait for services to be ready
-      - name: Wait for Kubernetes resources to be ready
+      - name: 📊 Final Summary of Endpoints
         run: |
-          kubectl wait --for=condition=available --timeout=600s deployment/agent-service
-          kubectl wait --for=condition=available --timeout=600s deployment/integration-service
-          kubectl wait --for=condition=available --timeout=600s deployment/notification-service
-          kubectl wait --for=condition=available --timeout=600s deployment/aggregator-service
-
-      # Step 10: Trigger Redshift CronJob manually
-      - name: Trigger Redshift CronJob manually
-        run: |
-          kubectl create job --from=cronjob/redshift-analytics-cronjob redshift-analytics-manual || echo "CronJob not found, skipping."
-
-      # Step 11: Post-deploy verification
-      - name: Verify Deployments
-        run: |
-          kubectl get pods -A
-          kubectl get services -A
-          kubectl get ingress -A
-
-      # Step 12: Fetch GKE LoadBalancer IP and print
-      - name: Get GKE Ingress External IP
-        run: |
-          echo "Fetching external IP for ingress..."
+          echo "🌐 Fetching Ingress External IP..."
           for i in {1..30}; do
             INGRESS_IP=$(kubectl get ingress mooninsurance-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
             if [[ -n "$INGRESS_IP" ]]; then
-              echo "Ingress IP: $INGRESS_IP"
-              echo "::set-output name=ingress_ip::$INGRESS_IP"
+              echo "Ingress IP found: $INGRESS_IP"
+              echo "🚀 Access your services:"
+              echo "http://$INGRESS_IP/agent-service/agents"
+              echo "http://$INGRESS_IP/integration-service/sync"
+              echo "http://$INGRESS_IP/notification-service/notify"
+              echo "http://$INGRESS_IP/aggregator-service/aggregate"
+              echo "http://$INGRESS_IP/redshift-analytics-service/analyze"
               break
             fi
-            echo "Waiting for ingress IP allocation... ($i/30)"
             sleep 10
           done
+
+      - name: 📛 Add CI/CD Status Badge
+        run: |
+          echo "![CI/CD Status](https://github.com/${{ github.repository }}/actions/workflows/ci-cd.yaml/badge.svg)" > badge.md
+
+
+          
+# name: GCP GKE CI/CD Pipeline
+
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
+#     branches:
+#       - main
+
+# jobs:
+#   build-and-deploy:
+#     runs-on: ubuntu-latest
+
+#     env:
+#       PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+#       CLUSTER_NAME: moon-insurance-cluster
+#       CLUSTER_ZONE: us-central1-c
+#       REGION: us-central1
+#       REPO_NAME: mooninsurance-repo
+
+#     steps:
+#       # Step 1: Checkout the repository
+#       - name: Checkout repository
+#         uses: actions/checkout@v3
+
+#       # Step 2: Authenticate to Google Cloud
+#       - name: Authenticate to Google Cloud
+#         uses: google-github-actions/auth@v2
+#         with:
+#           credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+#       # Step 3: Set up Google Cloud SDK
+#       - name: Set up Google Cloud SDK
+#         uses: google-github-actions/setup-gcloud@v2
+#         with:
+#           project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+#       # Step 4: Install GKE gcloud auth plugin
+#       - name: Install GKE gcloud auth plugin
+#         run: |
+#           gcloud components install gke-gcloud-auth-plugin --quiet
+
+
+#       # Step 5: Configure Docker for Artifact Registry
+#       - name: Configure Docker for Artifact Registry
+#         run: |
+#           gcloud auth configure-docker $REGION-docker.pkg.dev
+
+#       # Step 6: Build and Push Docker Images
+#       - name: Build and Push Docker Images
+#         run: |
+#           SERVICES=("agent-service" "integration-service" "notification-service" "aggregator-service" "redshift-analytics-service")
+#           for SERVICE in "${SERVICES[@]}"; do
+#             echo "Building image for $SERVICE..."
+#             docker build -t us-central1-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE}:latest -f ./${SERVICE}/docker/Dockerfile ./${SERVICE}
+#             echo "Pushing image for $SERVICE..."
+#             docker push us-central1-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE}:latest
+#           done
+
+#       # Step 7: Get GKE cluster credentials
+#       - name: Get GKE credentials
+#         run: |
+#           gcloud container clusters get-credentials $CLUSTER_NAME --zone $CLUSTER_ZONE --project $PROJECT_ID
+
+#       # Step 8: Deploy Kubernetes manifests
+#       - name: Deploy to GKE
+#         env:
+#           MONGO_URI: ${{ secrets.MONGO_URI }}
+#           REDSHIFT_HOST: ${{ secrets.REDSHIFT_HOST }}
+#           REDSHIFT_PORT: ${{ secrets.REDSHIFT_PORT }}
+#           REDSHIFT_USER: ${{ secrets.REDSHIFT_USER }}
+#           REDSHIFT_PASSWORD: ${{ secrets.REDSHIFT_PASSWORD }}
+#           REDSHIFT_DBNAME: ${{ secrets.REDSHIFT_DBNAME }}
+#         run: |
+#           kubectl apply -f ./agent-service/manifests/
+#           kubectl apply -f ./integration-service/manifests/
+#           kubectl apply -f ./notification-service/manifests/
+#           kubectl apply -f ./aggregator-service/manifests/
+#           kubectl apply -f ./redshift-analytics-service/manifests/
+#           kubectl apply -f ./ingress.yaml
+
+#       # Step 9: Wait for services to be ready
+#       - name: Wait for Kubernetes resources to be ready
+#         run: |
+#           kubectl wait --for=condition=available --timeout=600s deployment/agent-service
+#           kubectl wait --for=condition=available --timeout=600s deployment/integration-service
+#           kubectl wait --for=condition=available --timeout=600s deployment/notification-service
+#           kubectl wait --for=condition=available --timeout=600s deployment/aggregator-service
+
+#       # Step 10: Trigger Redshift CronJob manually
+#       - name: Trigger Redshift CronJob manually
+#         run: |
+#           kubectl create job --from=cronjob/redshift-analytics-cronjob redshift-analytics-manual || echo "CronJob not found, skipping."
+
+#       # Step 11: Post-deploy verification
+#       - name: Verify Deployments
+#         run: |
+#           kubectl get pods -A
+#           kubectl get services -A
+#           kubectl get ingress -A
+
+#       # Step 12: Fetch GKE LoadBalancer IP and print
+#       - name: Get GKE Ingress External IP
+#         run: |
+#           echo "Fetching external IP for ingress..."
+#           for i in {1..30}; do
+#             INGRESS_IP=$(kubectl get ingress mooninsurance-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+#             if [[ -n "$INGRESS_IP" ]]; then
+#               echo "Ingress IP: $INGRESS_IP"
+#               echo "::set-output name=ingress_ip::$INGRESS_IP"
+#               break
+#             fi
+#             echo "Waiting for ingress IP allocation... ($i/30)"
+#             sleep 10
+#           done
 
