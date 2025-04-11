@@ -184,5 +184,3 @@ jobs:
       - name: 📛 Add CI/CD Status Badge
         run: |
           echo "![CI/CD Status](https://github.com/${{ github.repository }}/actions/workflows/ci-cd.yaml/badge.svg)" > badge.md
-
-          

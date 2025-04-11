@@ -28,8 +28,13 @@ spec:
             - name: REDSHIFT_DBNAME
               value: "analyticsdb"
             - name: MONGO_URI
+              valueFrom:
+              secretKeyRef:
+                name: mooninsurance-secrets
+                key: mongo-uri
+
               # value: mongodb://mongodb-service:27017
-              value: "${MONGO_URI}"
+              # value: "${MONGO_URI}"
 
             # env:
             # - name: REDSHIFT_HOST
