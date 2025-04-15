@@ -160,7 +160,6 @@ def sync_products_achieving_targets():
         print(f"❌ ERROR in sync_products_achieving_targets: {e}")
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/sync/branch_wise_performance', methods=['POST'])
 def sync_branch_wise_performance():
     try:
@@ -181,7 +180,7 @@ def sync_branch_wise_performance():
                 branch_name VARCHAR(255),
                 total_sales_value FLOAT
             );
-            TRUNCATE TABLE products_achieving_targets;
+            TRUNCATE TABLE branch_wise_sales_performance;
         """)
         conn.commit()
 
@@ -200,6 +199,46 @@ def sync_branch_wise_performance():
     except Exception as e:
         print(f"❌ ERROR in sync_branch_wise_performance: {e}")
         return jsonify({"error": str(e)}), 500
+
+# @app.route('/sync/branch_wise_performance', methods=['POST'])
+# def sync_branch_wise_performance():
+#     try:
+#         pipeline = [
+#             {"$group": {"_id": "$branch_name", "total_sales_value": {"$sum": "$sales_value"}}},
+#             {"$sort": {"total_sales_value": -1}}
+#         ]
+#         results = list(sales_collection.aggregate(pipeline))
+#         print(f"🔍 Aggregated Branch Wise Sales Performance: {results}")
+
+#         conn = get_redshift_connection()
+#         if not conn:
+#             return jsonify({"error": "Redshift connection failed"}), 500
+
+#         cursor = conn.cursor()
+#         cursor.execute("""
+#             CREATE TABLE IF NOT EXISTS branch_wise_sales_performance (
+#                 branch_name VARCHAR(255),
+#                 total_sales_value FLOAT
+#             );
+#             TRUNCATE TABLE products_achieving_targets;
+#         """)
+#         conn.commit()
+
+#         for result in results:
+#             cursor.execute("""
+#                 INSERT INTO branch_wise_sales_performance (branch_name, total_sales_value)
+#                 VALUES (%s, %s)
+#             """, (result["_id"], result["total_sales_value"]))
+#         conn.commit()
+
+#         cursor.close()
+#         conn.close()
+
+#         return jsonify({"message": "Branch wise performance synced to Redshift ✅", "data": results}), 200
+
+#     except Exception as e:
+#         print(f"❌ ERROR in sync_branch_wise_performance: {e}")
+#         return jsonify({"error": str(e)}), 500
 
 # from flask import Flask, jsonify
 # from pymongo import MongoClient
