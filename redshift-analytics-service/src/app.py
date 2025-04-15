@@ -77,20 +77,20 @@ def home():
     return jsonify({"message": "Moon Insurance Redshift Analytics Service is running 🚀"}), 200
 
 
+# ===================== 🔁 ENDPOINTS =====================
+
 @app.route('/sync/best_teams', methods=['POST'])
 def sync_best_teams():
     try:
         pipeline = [
+            {"$match": {"team_name": {"$ne": None}, "sales_value": {"$ne": None}}},
             {"$group": {"_id": "$team_name", "total_sales_value": {"$sum": "$sales_value"}}},
             {"$sort": {"total_sales_value": -1}}
         ]
         results = list(sales_collection.aggregate(pipeline))
-        print(f"🔍 Aggregated Best Teams: {results}")
+        print("🔍 Best Teams:", results)
 
         conn = get_redshift_connection()
-        if not conn:
-            return jsonify({"error": "Redshift connection failed"}), 500
-
         cursor = conn.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS best_teams (
@@ -99,41 +99,33 @@ def sync_best_teams():
             );
             TRUNCATE TABLE best_teams;
         """)
-        conn.commit()
-
         for result in results:
-            cursor.execute("""
-                INSERT INTO best_teams (team_name, total_sales_value)
-                VALUES (%s, %s)
-            """, (result["_id"], result["total_sales_value"]))
+            cursor.execute(
+                "INSERT INTO best_teams (team_name, total_sales_value) VALUES (%s, %s)",
+                (result["_id"], result["total_sales_value"])
+            )
         conn.commit()
-
         cursor.close()
         conn.close()
-
         return jsonify({"message": "Best teams synced to Redshift ✅", "data": results}), 200
-
     except Exception as e:
-        print(f"❌ ERROR in sync_best_teams: {e}")
+        print(f"❌ ERROR in best_teams: {e}")
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/sync/products_achieving_targets', methods=['POST'])
 def sync_products_achieving_targets():
     try:
-        target_sales_value = 50000  # Example threshold
+        target_sales_value = 50000
         pipeline = [
+            {"$match": {"product_name": {"$ne": None}, "sales_value": {"$ne": None}}},
             {"$group": {"_id": "$product_name", "total_sales_value": {"$sum": "$sales_value"}}},
             {"$match": {"total_sales_value": {"$gte": target_sales_value}}},
             {"$sort": {"total_sales_value": -1}}
         ]
         results = list(sales_collection.aggregate(pipeline))
-        print(f"🔍 Aggregated Products Achieving Targets: {results}")
+        print("🔍 Products Achieving Targets:", results)
 
         conn = get_redshift_connection()
-        if not conn:
-            return jsonify({"error": "Redshift connection failed"}), 500
-
         cursor = conn.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS products_achieving_targets (
@@ -142,39 +134,31 @@ def sync_products_achieving_targets():
             );
             TRUNCATE TABLE products_achieving_targets;
         """)
-        conn.commit()
-
         for result in results:
-            cursor.execute("""
-                INSERT INTO products_achieving_targets (product_name, total_sales_value)
-                VALUES (%s, %s)
-            """, (result["_id"], result["total_sales_value"]))
+            cursor.execute(
+                "INSERT INTO products_achieving_targets (product_name, total_sales_value) VALUES (%s, %s)",
+                (result["_id"], result["total_sales_value"])
+            )
         conn.commit()
-
         cursor.close()
         conn.close()
-
         return jsonify({"message": "Products achieving targets synced to Redshift ✅", "data": results}), 200
-
     except Exception as e:
-        print(f"❌ ERROR in sync_products_achieving_targets: {e}")
+        print(f"❌ ERROR in products_achieving_targets: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/sync/branch_wise_performance', methods=['POST'])
 def sync_branch_wise_performance():
     try:
         pipeline = [
-            {"$match": {"branch_name": {"$ne": None}}},  # Optional: safeguard against null
+            {"$match": {"branch_name": {"$ne": None}, "sales_value": {"$ne": None}}},
             {"$group": {"_id": "$branch_name", "total_sales_value": {"$sum": "$sales_value"}}},
             {"$sort": {"total_sales_value": -1}}
         ]
         results = list(sales_collection.aggregate(pipeline))
-        print(f"🔍 Aggregated Branch Wise Sales Performance: {results}")
+        print("🔍 Branch Performance:", results)
 
         conn = get_redshift_connection()
-        if not conn:
-            return jsonify({"error": "Redshift connection failed"}), 500
-
         cursor = conn.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS branch_wise_sales_performance (
@@ -183,24 +167,147 @@ def sync_branch_wise_performance():
             );
             TRUNCATE TABLE branch_wise_sales_performance;
         """)
-        conn.commit()
-
         for result in results:
-            branch_name = result["_id"] if result["_id"] else "Unknown"
-            cursor.execute("""
-                INSERT INTO branch_wise_sales_performance (branch_name, total_sales_value)
-                VALUES (%s, %s)
-            """, (branch_name, result["total_sales_value"]))
+            cursor.execute(
+                "INSERT INTO branch_wise_sales_performance (branch_name, total_sales_value) VALUES (%s, %s)",
+                (result["_id"], result["total_sales_value"])
+            )
         conn.commit()
-
         cursor.close()
         conn.close()
-
         return jsonify({"message": "Branch wise performance synced to Redshift ✅", "data": results}), 200
-
     except Exception as e:
-        print(f"❌ ERROR in sync_branch_wise_performance: {e}")
+        print(f"❌ ERROR in branch_wise_performance: {e}")
         return jsonify({"error": str(e)}), 500
+
+# ✅ Start Flask App
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5005, debug=True)
+    
+# @app.route('/sync/best_teams', methods=['POST'])
+# def sync_best_teams():
+#     try:
+#         pipeline = [
+#             {"$group": {"_id": "$team_name", "total_sales_value": {"$sum": "$sales_value"}}},
+#             {"$sort": {"total_sales_value": -1}}
+#         ]
+#         results = list(sales_collection.aggregate(pipeline))
+#         print(f"🔍 Aggregated Best Teams: {results}")
+
+#         conn = get_redshift_connection()
+#         if not conn:
+#             return jsonify({"error": "Redshift connection failed"}), 500
+
+#         cursor = conn.cursor()
+#         cursor.execute("""
+#             CREATE TABLE IF NOT EXISTS best_teams (
+#                 team_name VARCHAR(255),
+#                 total_sales_value FLOAT
+#             );
+#             TRUNCATE TABLE best_teams;
+#         """)
+#         conn.commit()
+
+#         for result in results:
+#             cursor.execute("""
+#                 INSERT INTO best_teams (team_name, total_sales_value)
+#                 VALUES (%s, %s)
+#             """, (result["_id"], result["total_sales_value"]))
+#         conn.commit()
+
+#         cursor.close()
+#         conn.close()
+
+#         return jsonify({"message": "Best teams synced to Redshift ✅", "data": results}), 200
+
+#     except Exception as e:
+#         print(f"❌ ERROR in sync_best_teams: {e}")
+#         return jsonify({"error": str(e)}), 500
+
+
+# @app.route('/sync/products_achieving_targets', methods=['POST'])
+# def sync_products_achieving_targets():
+#     try:
+#         target_sales_value = 50000  # Example threshold
+#         pipeline = [
+#             {"$group": {"_id": "$product_name", "total_sales_value": {"$sum": "$sales_value"}}},
+#             {"$match": {"total_sales_value": {"$gte": target_sales_value}}},
+#             {"$sort": {"total_sales_value": -1}}
+#         ]
+#         results = list(sales_collection.aggregate(pipeline))
+#         print(f"🔍 Aggregated Products Achieving Targets: {results}")
+
+#         conn = get_redshift_connection()
+#         if not conn:
+#             return jsonify({"error": "Redshift connection failed"}), 500
+
+#         cursor = conn.cursor()
+#         cursor.execute("""
+#             CREATE TABLE IF NOT EXISTS products_achieving_targets (
+#                 product_name VARCHAR(255),
+#                 total_sales_value FLOAT
+#             );
+#             TRUNCATE TABLE products_achieving_targets;
+#         """)
+#         conn.commit()
+
+#         for result in results:
+#             cursor.execute("""
+#                 INSERT INTO products_achieving_targets (product_name, total_sales_value)
+#                 VALUES (%s, %s)
+#             """, (result["_id"], result["total_sales_value"]))
+#         conn.commit()
+
+#         cursor.close()
+#         conn.close()
+
+#         return jsonify({"message": "Products achieving targets synced to Redshift ✅", "data": results}), 200
+
+#     except Exception as e:
+#         print(f"❌ ERROR in sync_products_achieving_targets: {e}")
+#         return jsonify({"error": str(e)}), 500
+
+# @app.route('/sync/branch_wise_performance', methods=['POST'])
+# def sync_branch_wise_performance():
+#     try:
+#         pipeline = [
+#             {"$match": {"branch_name": {"$ne": None}}},  # Optional: safeguard against null
+#             {"$group": {"_id": "$branch_name", "total_sales_value": {"$sum": "$sales_value"}}},
+#             {"$sort": {"total_sales_value": -1}}
+#         ]
+#         results = list(sales_collection.aggregate(pipeline))
+#         print(f"🔍 Aggregated Branch Wise Sales Performance: {results}")
+
+#         conn = get_redshift_connection()
+#         if not conn:
+#             return jsonify({"error": "Redshift connection failed"}), 500
+
+#         cursor = conn.cursor()
+#         cursor.execute("""
+#             CREATE TABLE IF NOT EXISTS branch_wise_sales_performance (
+#                 branch_name VARCHAR(255),
+#                 total_sales_value FLOAT
+#             );
+#             TRUNCATE TABLE branch_wise_sales_performance;
+#         """)
+#         conn.commit()
+
+#         for result in results:
+#             branch_name = result["_id"] if result["_id"] else "Unknown"
+#             cursor.execute("""
+#                 INSERT INTO branch_wise_sales_performance (branch_name, total_sales_value)
+#                 VALUES (%s, %s)
+#             """, (branch_name, result["total_sales_value"]))
+#         conn.commit()
+
+#         cursor.close()
+#         conn.close()
+
+#         return jsonify({"message": "Branch wise performance synced to Redshift ✅", "data": results}), 200
+
+#     except Exception as e:
+#         print(f"❌ ERROR in sync_branch_wise_performance: {e}")
+#         return jsonify({"error": str(e)}), 500
 
 
 
