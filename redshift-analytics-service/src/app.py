@@ -164,7 +164,7 @@ def sync_products_achieving_targets():
 def sync_branch_wise_performance():
     try:
         pipeline = [
-            {"$match": {"branch_name": {"$ne": None}}},
+            {"$match": {"branch_name": {"$ne": None}}},  # Optional: safeguard against null
             {"$group": {"_id": "$branch_name", "total_sales_value": {"$sum": "$sales_value"}}},
             {"$sort": {"total_sales_value": -1}}
         ]
@@ -186,10 +186,11 @@ def sync_branch_wise_performance():
         conn.commit()
 
         for result in results:
+            branch_name = result["_id"] if result["_id"] else "Unknown"
             cursor.execute("""
                 INSERT INTO branch_wise_sales_performance (branch_name, total_sales_value)
                 VALUES (%s, %s)
-            """, (result["_id"], result["total_sales_value"]))
+            """, (branch_name, result["total_sales_value"]))
         conn.commit()
 
         cursor.close()
@@ -200,6 +201,7 @@ def sync_branch_wise_performance():
     except Exception as e:
         print(f"❌ ERROR in sync_branch_wise_performance: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 
 # @app.route('/sync/branch_wise_performance', methods=['POST'])
