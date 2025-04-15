@@ -96,7 +96,8 @@ def sync_best_teams():
             CREATE TABLE IF NOT EXISTS best_teams (
                 team_name VARCHAR(255),
                 total_sales_value FLOAT
-            )
+            );
+            TRUNCATE TABLE best_teams;
         """)
         conn.commit()
 
@@ -138,7 +139,8 @@ def sync_products_achieving_targets():
             CREATE TABLE IF NOT EXISTS products_achieving_targets (
                 product_name VARCHAR(255),
                 total_sales_value FLOAT
-            )
+            );
+            TRUNCATE TABLE products_achieving_targets;
         """)
         conn.commit()
 
@@ -178,7 +180,8 @@ def sync_branch_wise_performance():
             CREATE TABLE IF NOT EXISTS branch_wise_sales_performance (
                 branch_name VARCHAR(255),
                 total_sales_value FLOAT
-            )
+            );
+            TRUNCATE TABLE products_achieving_targets;
         """)
         conn.commit()
 
