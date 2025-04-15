@@ -1,141 +1,514 @@
 {
     "info": {
-      "name": "Moon Insurance API Collection - GKE Testing",
+      "name": "Moon Insurance API Collection - GKE Testing (Updated)",
       "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-      "_postman_id": "moon-insurance-collection"
+      "_postman_id": "moon-insurance-collection-updated"
     },
     "item": [
-      {
-        "name": "Agent Service",
-        "item": [
-          {
-            "name": "Create Agent",
-            "request": {
-              "method": "POST",
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": {
-                "mode": "raw",
-                "raw": "{\n  \"agent_code\": \"AGENT001\",\n  \"agent_name\": \"John Doe\",\n  \"team_name\": \"Alpha Team\",\n  \"branch_name\": \"Colombo\"\n}"
-              },
-              "url": { "raw": "{{baseUrl}}/agent", "host": ["{{baseUrl}}"], "path": ["agent"] }
-            }
-          },
-          {
-            "name": "Get Agent",
-            "request": {
-              "method": "GET",
-              "url": { "raw": "{{baseUrl}}/agent/AGENT001", "host": ["{{baseUrl}}"], "path": ["agent", "AGENT001"] }
-            }
-          },
-          {
-            "name": "Update Agent",
-            "request": {
-              "method": "PUT",
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": {
-                "mode": "raw",
-                "raw": "{\n  \"agent_name\": \"Jane Doe\",\n  \"branch_name\": \"Galle\"\n}"
-              },
-              "url": { "raw": "{{baseUrl}}/agent/AGENT001", "host": ["{{baseUrl}}"], "path": ["agent", "AGENT001"] }
-            }
-          },
-          {
-            "name": "Delete Agent",
-            "request": {
-              "method": "DELETE",
-              "url": { "raw": "{{baseUrl}}/agent/AGENT001", "host": ["{{baseUrl}}"], "path": ["agent", "AGENT001"] }
-            }
-          }
-        ]
-      },
       {
         "name": "Integration Service (Sales)",
         "item": [
           {
-            "name": "Create Sales",
+            "name": "Create Sale #1",
             "request": {
               "method": "POST",
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
               "body": {
                 "mode": "raw",
-                "raw": "{\n  \"agent_code\": \"AGENT001\",\n  \"product_name\": \"Life Insurance\",\n  \"team_name\": \"Alpha Team\",\n  \"branch_name\": \"Colombo\"\n}"
+                "raw": "{\n  \"agent_code\": \"AGENT003\",\n  \"product_name\": \"Vehicle Policy\",\n  \"team_name\": \"Beta Team\",\n  \"branch_name\": \"Jaffna\",\n  \"sales_value\": 177483.86\n}"
               },
-              "url": { "raw": "{{baseUrl}}/sales", "host": ["{{baseUrl}}"], "path": ["sales"] }
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
             }
           },
           {
-            "name": "Get Sales by Agent",
-            "request": {
-              "method": "GET",
-              "url": { "raw": "{{baseUrl}}/sales/agent/AGENT001", "host": ["{{baseUrl}}"], "path": ["sales", "agent", "AGENT001"] }
-            }
-          }
-        ]
-      },
-      {
-        "name": "Notification Service",
-        "item": [
-          {
-            "name": "Check Agent Sales Target",
-            "request": {
-              "method": "GET",
-              "url": { "raw": "{{baseUrl}}/notification/check_target/AGENT001", "host": ["{{baseUrl}}"], "path": ["notification", "check_target", "AGENT001"] }
-            }
-          }
-        ]
-      },
-      {
-        "name": "Aggregator Service",
-        "item": [
-          {
-            "name": "Best Performing Teams",
-            "request": {
-              "method": "GET",
-              "url": { "raw": "{{baseUrl}}/aggregation/best_teams", "host": ["{{baseUrl}}"], "path": ["aggregation", "best_teams"] }
-            }
-          },
-          {
-            "name": "Products Achieving Targets",
-            "request": {
-              "method": "GET",
-              "url": { "raw": "{{baseUrl}}/aggregation/best_products", "host": ["{{baseUrl}}"], "path": ["aggregation", "best_products"] }
-            }
-          },
-          {
-            "name": "Branch Performance",
-            "request": {
-              "method": "GET",
-              "url": { "raw": "{{baseUrl}}/aggregation/branch_performance", "host": ["{{baseUrl}}"], "path": ["aggregation", "branch_performance"] }
-            }
-          }
-        ]
-      },
-      {
-        "name": "Redshift Analytics Service",
-        "item": [
-          {
-            "name": "Sync Best Teams",
+            "name": "Create Sale #2",
             "request": {
               "method": "POST",
-              "url": { "raw": "{{baseUrl}}/sync/best_teams", "host": ["{{baseUrl}}"], "path": ["sync", "best_teams"] }
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT004\",\n  \"product_name\": \"Travel Shield\",\n  \"team_name\": \"Beta Team\",\n  \"branch_name\": \"Galle\",\n  \"sales_value\": 47635.79\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
             }
           },
           {
-            "name": "Sync Products Achieving Targets",
+            "name": "Create Sale #3",
             "request": {
               "method": "POST",
-              "url": { "raw": "{{baseUrl}}/sync/products_achieving_targets", "host": ["{{baseUrl}}"], "path": ["sync", "products_achieving_targets"] }
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT003\",\n  \"product_name\": \"Life Insurance\",\n  \"team_name\": \"Beta Team\",\n  \"branch_name\": \"Jaffna\",\n  \"sales_value\": 95035.77\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
             }
           },
           {
-            "name": "Sync Branch Wise Performance",
+            "name": "Create Sale #4",
             "request": {
               "method": "POST",
-              "url": { "raw": "{{baseUrl}}/sync/branch_wise_performance", "host": ["{{baseUrl}}"], "path": ["sync", "branch_wise_performance"] }
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT004\",\n  \"product_name\": \"Travel Shield\",\n  \"team_name\": \"Beta Team\",\n  \"branch_name\": \"Kandy\",\n  \"sales_value\": 198124.63\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Sale #5",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT001\",\n  \"product_name\": \"Vehicle Policy\",\n  \"team_name\": \"Beta Team\",\n  \"branch_name\": \"Colombo\",\n  \"sales_value\": 27022.75\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Sale #6",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT004\",\n  \"product_name\": \"Life Insurance\",\n  \"team_name\": \"Beta Team\",\n  \"branch_name\": \"Kandy\",\n  \"sales_value\": 19682.23\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Sale #7",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT003\",\n  \"product_name\": \"Life Insurance\",\n  \"team_name\": \"Alpha Team\",\n  \"branch_name\": \"Colombo\",\n  \"sales_value\": 190727.53\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Sale #8",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT002\",\n  \"product_name\": \"Life Insurance\",\n  \"team_name\": \"Alpha Team\",\n  \"branch_name\": \"Galle\",\n  \"sales_value\": 176316.63\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Sale #9",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT001\",\n  \"product_name\": \"Vehicle Policy\",\n  \"team_name\": \"Alpha Team\",\n  \"branch_name\": \"Jaffna\",\n  \"sales_value\": 83973.73\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Sale #10",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT004\",\n  \"product_name\": \"Vehicle Policy\",\n  \"team_name\": \"Alpha Team\",\n  \"branch_name\": \"Galle\",\n  \"sales_value\": 142212.98\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Sale #11",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT004\",\n  \"product_name\": \"Travel Shield\",\n  \"team_name\": \"Beta Team\",\n  \"branch_name\": \"Galle\",\n  \"sales_value\": 77497.08\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Sale #12",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT003\",\n  \"product_name\": \"Life Insurance\",\n  \"team_name\": \"Alpha Team\",\n  \"branch_name\": \"Colombo\",\n  \"sales_value\": 52008.45\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Sale #13",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT002\",\n  \"product_name\": \"Travel Shield\",\n  \"team_name\": \"Beta Team\",\n  \"branch_name\": \"Galle\",\n  \"sales_value\": 83715.61\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Sale #14",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT002\",\n  \"product_name\": \"Life Insurance\",\n  \"team_name\": \"Beta Team\",\n  \"branch_name\": \"Jaffna\",\n  \"sales_value\": 55143.9\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Sale #15",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT002\",\n  \"product_name\": \"Life Insurance\",\n  \"team_name\": \"Alpha Team\",\n  \"branch_name\": \"Galle\",\n  \"sales_value\": 75995.45\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Sale #16",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT001\",\n  \"product_name\": \"Vehicle Policy\",\n  \"team_name\": \"Beta Team\",\n  \"branch_name\": \"Galle\",\n  \"sales_value\": 35401.03\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Sale #17",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT004\",\n  \"product_name\": \"Health Cover\",\n  \"team_name\": \"Beta Team\",\n  \"branch_name\": \"Kandy\",\n  \"sales_value\": 77388.7\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Sale #18",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT004\",\n  \"product_name\": \"Travel Shield\",\n  \"team_name\": \"Beta Team\",\n  \"branch_name\": \"Colombo\",\n  \"sales_value\": 126027.25\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Sale #19",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT002\",\n  \"product_name\": \"Travel Shield\",\n  \"team_name\": \"Alpha Team\",\n  \"branch_name\": \"Galle\",\n  \"sales_value\": 12053.03\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
+            }
+          },
+          {
+            "name": "Create Sale #20",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"agent_code\": \"AGENT001\",\n  \"product_name\": \"Health Cover\",\n  \"team_name\": \"Alpha Team\",\n  \"branch_name\": \"Galle\",\n  \"sales_value\": 108548.63\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/sales",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "sales"
+                ]
+              }
             }
           }
         ]
       }
     ]
   }
-  
