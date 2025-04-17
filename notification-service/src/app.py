@@ -72,3 +72,10 @@ def check_sales_target(agent_code):
     except Exception as e:
         logging.error(f"❌ Error in check_sales_target: {e}")
         return jsonify({"error": str(e)}), 500
+
+ # ========================================================
+# ✅ Step 9: Start Flask App
+# ========================================================
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5003, debug=True)

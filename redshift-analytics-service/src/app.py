@@ -197,6 +197,14 @@ def sync_branch_wise_performance():
     except Exception as e:
         print(f"❌ ERROR in sync_branch_wise_performance: {e}")
         return jsonify({"error": str(e)}), 500
+    
+ # ========================================================
+# ✅ Step 9: Start Flask App
+# ========================================================
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5005, debug=True)
+    
 
 # from flask import Flask, jsonify
 # from pymongo import MongoClient
