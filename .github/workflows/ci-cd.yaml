@@ -68,8 +68,8 @@ jobs:
       - name: 🛠️ Build and Push Docker Image - ${{ matrix.service }}
         run: |
           echo "Building and pushing image: ${{ matrix.image_name }}"
-          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/mooninsurance-repo/${{ matrix.image_name }}:latest -f ./${{ matrix.path }}/docker/Dockerfile ./${{ matrix.path }}
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/mooninsurance-repo/${{ matrix.image_name }}:latest
+          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/moon-insurance-project/${{ matrix.image_name }}:latest -f ./${{ matrix.path }}/docker/Dockerfile ./${{ matrix.path }}
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/moon-insurance-project/${{ matrix.image_name }}:latest
 
       - name: 🚀 Deploy to GKE - ${{ matrix.service }}
         run: |
