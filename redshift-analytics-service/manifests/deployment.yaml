@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: redshift-analytics-service
-          image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-repo/redshift-analytics-service:latest
+          # image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-repo/redshift-analytics-service:latest
+          image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-project/redshift-analytics-service:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 5005

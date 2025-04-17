@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: integration-service
-          image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-repo/integration-service:latest
+          # image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-repo/integration-service:latest
+          image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-project/integration-service:latest
           # image: integration-service:latest
           imagePullPolicy: IfNotPresent
           ports:

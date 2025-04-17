@@ -14,7 +14,9 @@ spec:
     spec:
       containers:
         - name: agent-service
-          image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-repo/agent-service:latest
+          # image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-repo/agent-service:latest
+          image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-project/agent-service:latest
+
           ports:
             - containerPort: 5001
           env:

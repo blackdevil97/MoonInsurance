@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: aggregator-service
-          image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-repo/aggregator-service:latest
+          # image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-repo/aggregator-service:latest
+          image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-project/aggregator-service:latest
           # image: aggregator-service:latest
           imagePullPolicy: IfNotPresent
           ports:
@@ -27,4 +28,3 @@ spec:
                   key: mongo-uri
 
 
-                  

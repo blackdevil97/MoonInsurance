@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: notification-service
-          image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-repo/notification-service:latest
+          # image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-repo/notification-service:latest
+          image: us-central1-docker.pkg.dev/moon-insurance-project/moon-insurance-project/notification-service:latest
           # image: notification-service:latest
           imagePullPolicy: IfNotPresent
           ports:
