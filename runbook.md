@@ -1,118 +1,141 @@
 
-# 📘 Moon Insurance Microservices - Runbook
+# 🚀 Deployment Runbook - Moon Insurance Project
 
-## 🗓️ Last Updated
-2025-04-15 04:41:33 UTC
-
----
-
-## 🚀 Overview
-
-This runbook documents how to deploy, test, and operate the **Moon Agent Tracker** microservices platform for MoonInsurance. It includes deployment steps for GKE (Google Kubernetes Engine), Redshift integration, and automated CI/CD with GitHub Actions.
+This runbook guides you through the deployment process for the Moon Insurance Cloud Microservices project.
 
 ---
 
-## 📦 Services Overview
+## ✅ Prerequisites
 
-| Service                 | Port | Description |
-|------------------------|------|-------------|
-| agent-service          | 5001 | Manages agent records |
-| integration-service    | 5002 | Receives sales data |
-| notification-service   | 5003 | Sends alerts when targets are hit |
-| aggregator-service     | 5004 | Aggregates data for reporting |
-| redshift-analytics-service | 5005 | Syncs aggregated data to Redshift |
-
----
-
-## 🔧 Prerequisites
-
-- Google Cloud Project with GKE enabled
-- MongoDB Atlas URI
-- AWS Redshift cluster
-- GitHub Repository with Secrets configured:
-  - `MONGO_URI`
-  - `REDSHIFT_HOST`, `REDSHIFT_PORT`, `REDSHIFT_USER`, `REDSHIFT_PASSWORD`, `REDSHIFT_DBNAME`
-  - `GCP_SA_KEY`, `GCP_PROJECT_ID`
+- AWS Account (ECR + DynamoDB setup)
+- AWS CLI configured locally
+- Docker installed
+- Kubernetes cluster running
+- kubectl configured for your cluster
+- GitHub repository configured with Secrets for CI/CD
+- Python virtual environment (optional)
 
 ---
 
-## 🛠️ CI/CD Deployment Steps
+## 🌟 Step 1: Build Docker Images Locally (Optional for testing)
 
-1. Push or merge changes to the `main` branch.
-2. GitHub Actions will:
-   - Build and push Docker images
-   - Deploy to GKE using manifests
-   - Inject secrets into Kubernetes
-   - Run Postman collection for integration testing
-   - Validate Redshift data ingestion
+> Optional: If using GitHub Actions CI/CD, this is automated.
 
-You can monitor the pipeline from the **Actions** tab on GitHub.
-
----
-
-## 🌐 Accessing the Application
-
-Once deployed, access the services via:
-
-```
-http://<INGRESS-IP>/agent
-http://<INGRESS-IP>/sales
-http://<INGRESS-IP>/notification/check_target/AGENT001
-http://<INGRESS-IP>/aggregation/best_teams
-http://<INGRESS-IP>/aggregation/best_products
-http://<INGRESS-IP>/aggregation/branch_performance
-http://<INGRESS-IP>/sync/best_teams
-http://<INGRESS-IP>/sync/products_achieving_targets
-http://<INGRESS-IP>/sync/branch_wise_performance
+```bash
+docker build -t agent-service ./agent-service
+docker build -t integration-service ./integration-service
+docker build -t notification-service ./notification-service
+docker build -t aggregator-service ./aggregator-service
 ```
 
 ---
 
-## 🧪 Testing Instructions
+## 🌟 Step 2: Push Images to AWS ECR
 
-1. Import `postman_collection_updated.json` into Postman.
-2. Use environment `{baseUrl}` with your Ingress IP.
-3. Run the collection to validate sales creation, retrieval, and syncing.
+1. **Login to ECR:**
+
+```bash
+aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin <your_aws_account_id>.dkr.ecr.ap-southeast-1.amazonaws.com
+```
+
+2. **Tag and push each service image:**
+
+```bash
+docker tag agent-service:latest <your_aws_account_id>.dkr.ecr.ap-southeast-1.amazonaws.com/agent-service:latest
+docker push <your_aws_account_id>.dkr.ecr.ap-southeast-1.amazonaws.com/agent-service:latest
+
+docker tag integration-service:latest <your_aws_account_id>.dkr.ecr.ap-southeast-1.amazonaws.com/integration-service:latest
+docker push <your_aws_account_id>.dkr.ecr.ap-southeast-1.amazonaws.com/integration-service:latest
+
+docker tag notification-service:latest <your_aws_account_id>.dkr.ecr.ap-southeast-1.amazonaws.com/notification-service:latest
+docker push <your_aws_account_id>.dkr.ecr.ap-southeast-1.amazonaws.com/notification-service:latest
+
+docker tag aggregator-service:latest <your_aws_account_id>.dkr.ecr.ap-southeast-1.amazonaws.com/aggregator-service:latest
+docker push <your_aws_account_id>.dkr.ecr.ap-southeast-1.amazonaws.com/aggregator-service:latest
+```
+
+> ✅ **Note:** Your CI/CD pipeline will also handle this automatically!
 
 ---
 
-## 🚨 Troubleshooting
+## 🌟 Step 3: Create DynamoDB Tables
 
-| Issue | Fix |
-|-------|-----|
-| MongoDB connection error | Ensure `MONGO_URI` is valid and whitelisted |
-| Redshift sync failure | Verify Redshift credentials and DB accessibility |
-| Pod CrashLoopBackOff | Check container logs via `kubectl logs <pod-name>` |
+Before running the services, create the required DynamoDB tables:
 
----
+```bash
+python scripts/create_dynamodb_tables.py
+```
 
-## ✅ Health Check (Optional)
+Optional: Insert sample data
 
-You may implement `/health` endpoints in each service returning:
-```json
-{"status": "ok", "service": "agent-service"}
+```bash
+python scripts/generate_bulk_data.py
+python scripts/insert_data.py
+python scripts/verify_dynamodb_data.py
 ```
 
 ---
 
-## 📊 Observability (Optional Bonus)
+## 🌟 Step 4: Deploy to Kubernetes Cluster
 
-To earn extra marks:
-- Enable Prometheus metrics scraping
-- Use Kubernetes probes: `livenessProbe` and `readinessProbe`
+Either use **GitHub Actions CI/CD** (recommended) or apply manifests manually:
 
----
+```bash
+kubectl apply -f k8s/
+```
 
-## 🔐 Security Notes
-
-- All secrets injected via GitHub Vault
-- No hardcoded credentials in code or manifests
-- Communication between services is internal (ClusterIP)
+> ✅ Tip: Use the optional `deploy.sh` script for quick deployment!
 
 ---
 
-## 📞 Support
+## 🌟 Step 5: Verify Deployment
 
-Maintainer: MoonInsurance DevOps Team  
-Contact: rajthawijesinghe74@gmail.com
+Check pods and services:
 
+```bash
+kubectl get pods
+kubectl get services
+```
+
+---
+
+## 🌟 Step 6: Test Microservices
+
+Forward ports for local testing:
+
+```bash
+kubectl port-forward service/agent-service 5001:5001
+kubectl port-forward service/integration-service 5002:5002
+kubectl port-forward service/notification-service 5003:5003
+kubectl port-forward service/aggregator-service 5004:5004
+```
+
+Test endpoints:
+
+| Service | Endpoint |
+|---------|-----------|
+| Agent Service | http://localhost:5001/agent |
+| Integration Service | http://localhost:5002/sales |
+| Notification Service | http://localhost:5003/notify |
+| Aggregator Service | http://localhost:5004/aggregate |
+
+---
+
+## 🌟 Step 7: CI/CD Pipeline (Blue-Green Deployment)
+
+Your GitHub Actions pipeline:
+- Builds Docker images
+- Pushes to AWS ECR
+- Deploys Blue-Green to Kubernetes
+- Performs automated health checks
+- Switches traffic to Green if healthy
+
+> ✅ Push changes to `main` branch to trigger CI/CD!
+
+---
+
+## 🎉 Congratulations!
+
+Your project is successfully deployed and running on Kubernetes! 🚀
+
+---
